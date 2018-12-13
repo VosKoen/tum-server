@@ -2,9 +2,10 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
+    OneToMany
   } from "typeorm";
-  import { BaseEntity } from "typeorm/repository/BaseEntity";
-//   import Step from "../recipe-steps/entity";
+  import { BaseEntity } from "typeorm/repository/BaseEntity";   
+  import Step from "../recipe-steps/entity";
   
   @Entity()
   export default class Recipe extends BaseEntity {
@@ -14,7 +15,7 @@ import {
     @Column("text", { nullable: false })
     name: string;
   
-    // @OneToMany(_ => Step, step => step.recipe)
-    // steps: Step[];
+    @OneToMany(_ => Step, step => step.recipe)
+    steps: Step[];
   }
   

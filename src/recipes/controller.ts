@@ -1,4 +1,4 @@
-import { JsonController, Get } from "routing-controllers";
+import { JsonController, Get, Post, HttpCode, Body } from "routing-controllers";
 import { getRepository } from "typeorm";
 import Recipe from "./entity";
 
@@ -19,5 +19,12 @@ export default class RecipeController {
         console.log(`An error occured: ${error}`);
       }
     }
+  }
+
+  @Post("/recipes")
+  @HttpCode(201)
+  async createRecipe(@Body() recipe: Recipe) {
+    const newRecipe = Recipe.create(recipe);
+    return newRecipe.save();
   }
 }

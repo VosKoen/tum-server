@@ -5,12 +5,14 @@ import RecipeController from './recipes/controller'
 
 const port = process.env.PORT || 4000
 
-const app = createKoaServer({
+export const app = createKoaServer({
    controllers: [RecipeController]
 })
 
-setupDb()
+export const server = () => setupDb()
   .then(_ =>
     app.listen(port, () => console.log(`Listening on port ${port}`))
   )
   .catch(err => console.error(err))
+
+  server();
