@@ -3,7 +3,9 @@ import { DefaultNamingStrategy } from "typeorm/naming-strategy/DefaultNamingStra
 import { NamingStrategyInterface } from "typeorm/naming-strategy/NamingStrategyInterface";
 import { snakeCase } from "typeorm/util/StringUtils";
 import Recipe from "./recipes/entity";
-import Step from './recipe-steps/entity'
+import Step from "./recipe-steps/entity";
+import Ingredient from "./ingredients/entity";
+import IngredientType from "./ingredient-types/entity";
 
 class CustomNamingStrategy extends DefaultNamingStrategy
   implements NamingStrategyInterface {
@@ -36,7 +38,7 @@ export default () =>
     url:
       process.env.DATABASE_URL ||
       "postgres://postgres:secret@localhost:5432/postgres",
-    entities: [Recipe, Step],
+    entities: [Recipe, Step, Ingredient, IngredientType],
     synchronize: true,
     logging: true,
     namingStrategy: new CustomNamingStrategy()

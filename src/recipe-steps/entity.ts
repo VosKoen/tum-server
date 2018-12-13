@@ -13,7 +13,7 @@ export default class Step extends BaseEntity {
   @Column("text", { nullable: false })
   description: string;
 
-  @Column("int", { nullable: true })
+  @Column("int", { nullable: false })
   recipeId: number;
 
   @ManyToOne(_ => Recipe, recipe => recipe.steps,{onDelete:"CASCADE"})
