@@ -4,11 +4,13 @@ import setupDb from './db'
 import RecipeController from './recipes/controller'
 import RecipeStepController from './recipe-steps/controller'
 import RecipeIngredientController from './ingredients/controller'
+import UserController from './users/controller'
+import LoginController from './logins/controller'
 
 const port = process.env.PORT || 4000
 
 export const app = createKoaServer({
-   controllers: [RecipeController, RecipeStepController, RecipeIngredientController
+   controllers: [RecipeController, RecipeStepController, RecipeIngredientController, UserController, LoginController
   ]
 })
 
