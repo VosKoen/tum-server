@@ -3,11 +3,12 @@ import {createKoaServer} from "routing-controllers"
 import setupDb from './db'
 import RecipeController from './recipes/controller'
 import RecipeStepController from './recipe-steps/controller'
+import RecipeIngredientController from './ingredients/controller'
 
 const port = process.env.PORT || 4000
 
 export const app = createKoaServer({
-   controllers: [RecipeController, RecipeStepController
+   controllers: [RecipeController, RecipeStepController, RecipeIngredientController
   ]
 })
 
