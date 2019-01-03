@@ -1,1 +1,2 @@
-# tums-server
+# tum
+-server
