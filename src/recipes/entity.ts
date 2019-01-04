@@ -11,6 +11,9 @@ export default class Recipe extends BaseEntity {
   @Column("text", { nullable: false })
   name: string;
 
+  @Column("text", { nullable: false })
+  description: string;
+
   @OneToMany(_ => Step, step => step.recipe)
   steps: Step[];
 
