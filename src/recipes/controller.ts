@@ -8,20 +8,20 @@ export default class RecipeController {
   async getRandomRecipe() {
     {
       try {
-        const recipe:any = await getRepository(Recipe)
+        const recipe: any = await getRepository(Recipe)
           .createQueryBuilder("recipe")
           .orderBy("RANDOM()")
           .limit(1)
-          .getOne()
+          .getOne();
 
+        const completeRecipe = await getRepository(Recipe)
+          .createQueryBuilder("recipe")
+          .where("recipe.id = :id", { id: recipe.id })
+          .leftJoinAndSelect("recipe.ingredients", "ingredient")
+          .leftJoinAndSelect("recipe.steps", "step")
+          .getOne();
 
-        const recipeWithIngredients = await getRepository(Recipe)
-        .createQueryBuilder("recipe")
-        .where("recipe.id = :id", {id: recipe.id} )
-        .leftJoinAndSelect("recipe.ingredients", "ingredient")
-        .getOne();
-
-        return recipeWithIngredients;
+        return completeRecipe;
       } catch (error) {
         console.log(`An error occured: ${error}`);
       }
