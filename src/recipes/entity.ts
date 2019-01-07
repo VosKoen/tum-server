@@ -9,7 +9,7 @@ export default class Recipe extends BaseEntity {
   id?: number;
 
   @Column("text", { nullable: false })
-  name: string;
+  title: string;
 
   @Column("text", { nullable: false })
   description: string;

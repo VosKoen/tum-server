@@ -10,6 +10,7 @@ import LoginController from './logins/controller'
 const port = process.env.PORT || 4000
 
 export const app = createKoaServer({
+    cors: true,
    controllers: [RecipeController, RecipeStepController, RecipeIngredientController, UserController, LoginController
   ]
 })
