@@ -4,6 +4,7 @@ import { NamingStrategyInterface } from "typeorm/naming-strategy/NamingStrategyI
 import { snakeCase } from "typeorm/util/StringUtils";
 import Recipe from "./recipes/entity";
 import Step from "./recipe-steps/entity";
+import RecipeImage from "./recipe-images/entity";
 import Ingredient from "./ingredients/entity";
 import IngredientType from "./ingredient-types/entity";
 import User from "./users/entity";
@@ -39,7 +40,7 @@ export default () =>
     url:
       process.env.DATABASE_URL ||
       "postgres://postgres:secret@localhost:5432/postgres",
-    entities: [Recipe, Step, Ingredient, IngredientType, User],
+    entities: [Recipe, Step, RecipeImage, Ingredient, IngredientType, User],
     synchronize: true,
     logging: true,
     namingStrategy: new CustomNamingStrategy()

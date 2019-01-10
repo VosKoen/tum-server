@@ -6,12 +6,13 @@ import RecipeStepController from './recipe-steps/controller'
 import RecipeIngredientController from './ingredients/controller'
 import UserController from './users/controller'
 import LoginController from './logins/controller'
+import RecipeImageController from './recipe-images/controller'
 
 const port = process.env.PORT || 4000
 
 export const app = createKoaServer({
     cors: true,
-   controllers: [RecipeController, RecipeStepController, RecipeIngredientController, UserController, LoginController
+   controllers: [RecipeController, RecipeStepController, RecipeIngredientController, RecipeImageController, UserController, LoginController
   ]
 })
 
