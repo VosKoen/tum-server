@@ -2,11 +2,13 @@ import {
     BaseEntity,
     Entity,
     PrimaryGeneratedColumn,
-    Column
+    Column,
+    OneToMany
   } from "typeorm";
   import { Exclude } from "class-transformer";
   import { MinLength, IsString, IsEmail } from "class-validator";
   import * as bcrypt from "bcrypt";
+  import Recipe from '../recipes/entity'
   
   @Entity()
   export default class User extends BaseEntity {
@@ -31,5 +33,8 @@ import {
     checkPassword(rawPassword: string): Promise<boolean> {
       return bcrypt.compare(rawPassword, this.password);
     }
+
+    @OneToMany(_ => Recipe, recipe => recipe.user)
+    recipes: Recipe[];
   }
   

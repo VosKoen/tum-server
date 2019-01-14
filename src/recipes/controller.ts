@@ -1,4 +1,4 @@
-import { JsonController, Get, Post, HttpCode, Body } from "routing-controllers";
+import { JsonController, Get, Post, HttpCode, Body, Param } from "routing-controllers";
 import { getRepository } from "typeorm";
 import Recipe from "./entity";
 
@@ -22,6 +22,22 @@ export default class RecipeController {
           .getOne();
 
         return completeRecipe;
+      } catch (error) {
+        console.log(`An error occured: ${error}`);
+      }
+    }
+  }
+
+  @Get("/users/:id/recipes")
+  async getUserRecipes(@Param('id') id: number) {
+    {
+      try {
+        const recipes: any = await getRepository(Recipe)
+          .createQueryBuilder("recipe")
+          .where("recipe.userId = :id", { id: id })
+          .getMany();
+
+        return recipes;
       } catch (error) {
         console.log(`An error occured: ${error}`);
       }
