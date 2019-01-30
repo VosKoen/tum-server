@@ -1,6 +1,27 @@
-import { JsonController, Get, Post, HttpCode, Body, Param } from "routing-controllers";
+import {
+  JsonController,
+  Get,
+  Post,
+  HttpCode,
+  Body,
+  Param
+} from "routing-controllers";
 import { getRepository } from "typeorm";
 import Recipe from "./entity";
+import Ingredient from "../ingredients/entity";
+
+const getIngredientDetails = completeRecipe => {
+  const ingredientsWithDetails = completeRecipe.recipeIngredients.map(
+    async ingredient => {
+      const ingredientDetails = await getRepository(Ingredient)
+        .createQueryBuilder("ingredient")
+        .where("ingredient.id = :id", { id: ingredient.ingredientId })
+        .getOne();
+      return { ...ingredient, ...ingredientDetails };
+    }
+  );
+  return Promise.all(ingredientsWithDetails);
+};
 
 @JsonController()
 export default class RecipeController {
@@ -17,11 +38,13 @@ export default class RecipeController {
         const completeRecipe = await getRepository(Recipe)
           .createQueryBuilder("recipe")
           .where("recipe.id = :id", { id: recipe.id })
-          .leftJoinAndSelect("recipe.ingredients", "ingredient")
+          .leftJoinAndSelect("recipe.recipeIngredients", "ingredient")
           .leftJoinAndSelect("recipe.steps", "step")
           .getOne();
 
-        return completeRecipe;
+        const ingredientDetails = await getIngredientDetails(completeRecipe);
+
+        return { ...completeRecipe, ingredientDetails };
       } catch (error) {
         console.log(`An error occured: ${error}`);
       }
@@ -29,7 +52,7 @@ export default class RecipeController {
   }
 
   @Get("/users/:id/recipes")
-  async getUserRecipes(@Param('id') id: number) {
+  async getUserRecipes(@Param("id") id: number) {
     {
       try {
         const recipes: any = await getRepository(Recipe)

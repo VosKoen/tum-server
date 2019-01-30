@@ -3,7 +3,7 @@ import {createKoaServer} from "routing-controllers"
 import setupDb from './db'
 import RecipeController from './recipes/controller'
 import RecipeStepController from './recipe-steps/controller'
-import RecipeIngredientController from './ingredients/controller'
+import RecipeIngredientController from './recipe-ingredients/controller'
 import UserController from './users/controller'
 import LoginController from './logins/controller'
 import RecipeImageController from './recipe-images/controller'

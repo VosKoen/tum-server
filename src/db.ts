@@ -6,7 +6,9 @@ import Recipe from "./recipes/entity";
 import Step from "./recipe-steps/entity";
 import RecipeImage from "./recipe-images/entity";
 import Ingredient from "./ingredients/entity";
+import RecipeIngredient from "./recipe-ingredients/entity";
 import IngredientType from "./ingredient-types/entity";
+import IngredientAmountType from "./ingredient-amount-types/entity";
 import User from "./users/entity";
 
 class CustomNamingStrategy extends DefaultNamingStrategy
@@ -40,7 +42,16 @@ export default () =>
     url:
       process.env.DATABASE_URL ||
       "postgres://postgres:secret@localhost:5432/postgres",
-    entities: [Recipe, Step, RecipeImage, Ingredient, IngredientType, User],
+    entities: [
+      Recipe,
+      Step,
+      RecipeImage,
+      Ingredient,
+      RecipeIngredient,
+      IngredientType,
+      IngredientAmountType,
+      User
+    ],
     synchronize: true,
     logging: true,
     namingStrategy: new CustomNamingStrategy()
