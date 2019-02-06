@@ -10,6 +10,7 @@ import { getRepository } from "typeorm";
 import Recipe from "./entity";
 import Ingredient from "../ingredients/entity";
 
+//Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
 const getIngredientDetails = completeRecipe => {
   const ingredientsWithDetails = completeRecipe.recipeIngredients.map(
     async ingredient => {
@@ -25,16 +26,20 @@ const getIngredientDetails = completeRecipe => {
 
 @JsonController()
 export default class RecipeController {
+
+  // Function to retrieve a random recipe with all relevant details from the database
   @Get("/recipes/random")
   async getRandomRecipe() {
     {
       try {
+        // Get a random recipe from the database
         const recipe: any = await getRepository(Recipe)
           .createQueryBuilder("recipe")
           .orderBy("RANDOM()")
           .limit(1)
           .getOne();
 
+        // Retrieve the ingredients and steps belonging to this recipe  
         const completeRecipe = await getRepository(Recipe)
           .createQueryBuilder("recipe")
           .where("recipe.id = :id", { id: recipe.id })
@@ -42,6 +47,7 @@ export default class RecipeController {
           .leftJoinAndSelect("recipe.steps", "step")
           .getOne();
 
+        // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
         const ingredientDetails = await getIngredientDetails(completeRecipe);
 
         return { ...completeRecipe, ingredientDetails };
@@ -51,6 +57,7 @@ export default class RecipeController {
     }
   }
 
+  // Function to get all recipes created by a specific user
   @Get("/users/:id/recipes")
   async getUserRecipes(@Param("id") id: number) {
     {
