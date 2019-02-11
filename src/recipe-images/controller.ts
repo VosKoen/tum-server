@@ -8,11 +8,14 @@ import {
   HttpCode,
   NotFoundError
 } from "routing-controllers";
+
 import { getRepository } from "typeorm";
 import RecipeImage from "./entity";
-import Recipe from '../recipes/entity'
+import Recipe from "../recipes/entity";
 import * as ImageKit from "imagekit";
 import { imageKitId, publicApiKey, privateApiKey } from "../constants";
+import * as jsSHA from "jssha";
+import * as request from "superagent";
 
 @JsonController()
 export default class RecipeImageController {
@@ -44,22 +47,49 @@ export default class RecipeImageController {
   @HttpCode(201)
   async uploadNewImage(
     @UploadedFile("file")
-    file: any,
-    @Body() body: any
+    file: any
+    // ,
+    // @Body() body: any
   ) {
     try {
-      const imageBase64 = file.buffer.toString("base64");
+      // const imageBase64 = file.buffer.toString("base64");
 
-      let image;
+      // let image;
 
-      await this.imagekit
-        .upload(imageBase64, {
-          filename: "some-test",
-          folder: `user/${body.userId}`
+      // const filename = `dish-user-${body.userId}.jpg`;
+      const timestamp = parseInt(`${Date.now() / 1000}`, 10);
+
+      const signatureSeed = `apiKey=${publicApiKey}&filename=${file.name}&timestamp=${timestamp}`;
+
+      const shaObj = new jsSHA("SHA-1", "TEXT");
+      shaObj.setHMACKey(privateApiKey, "TEXT");
+      shaObj.update(signatureSeed);
+      const signature = shaObj.getHMAC("HEX");
+
+      await request
+        .post(`https://upload.imagekit.io/rest/api/image/v2/${imageKitId}`)
+        .set("Content-Type", "multipart/form-data")
+        .field({
+          // file: imageBase64,
+          apiKey: publicApiKey,
+          signature,
+          timestamp
         })
-        .then(result => (image = result));
+        .attach(file, file.name)
+        // .then(result => (image = result))
+        .then(_ => console.log("here") )
+        .catch(err => console.error(err));
 
-      return { imageUrl: image.url };
+      // await this.imagekit
+      //   .upload(imageBase64, {
+      //     filename: "some-test",
+      //     folder: `user/${body.userId}`
+      //   })
+      //   .then(result =>
+      //     image = result)
+
+      console.log("Success");
+      // return { imageUrl: image.url };
     } catch (error) {
       console.log(error);
     }
@@ -67,18 +97,19 @@ export default class RecipeImageController {
 
   @Post("/recipes/:id/images/")
   @HttpCode(201)
-  async addImageToRecipe(@Param("id") id: number, @Body() image: Partial<RecipeImage>) {
+  async addImageToRecipe(
+    @Param("id") id: number,
+    @Body() image: Partial<RecipeImage>
+  ) {
     try {
       const recipe = await Recipe.findOne(id);
 
       if (!recipe)
-      throw new NotFoundError("Could not find a recipe with this id");
-      const recipeImage = {recipeId: recipe.id, imageUrl: image.imageUrl}
-      return RecipeImage.create(recipeImage).save()
-
+        throw new NotFoundError("Could not find a recipe with this id");
+      const recipeImage = { recipeId: recipe.id, imageUrl: image.imageUrl };
+      return RecipeImage.create(recipeImage).save();
     } catch (error) {
       console.log(error);
     }
   }
-
 }
