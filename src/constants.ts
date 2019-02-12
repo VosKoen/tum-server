@@ -1,3 +1,6 @@
-export const imageKitId: string = 'foxAppDevImages'
-export const publicApiKey: string = 'WXy50wCdX9WcdPJIdArdIgjKTMw='
-export const privateApiKey: string = 'BAIVYMR+guACOYmuRiA1KwWoX7w='
+
+export const cloudinarySettings: any = {
+    cloud_name: "fox-app-development",
+    api_key:"777479512645236",
+    api_secret: "1jMf47vTsVdUyfMV5-i9hZ1bOY8"
+}

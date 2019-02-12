@@ -12,19 +12,10 @@ import {
 import { getRepository } from "typeorm";
 import RecipeImage from "./entity";
 import Recipe from "../recipes/entity";
-import * as ImageKit from "imagekit";
-import { imageKitId, publicApiKey, privateApiKey } from "../constants";
-import * as jsSHA from "jssha";
-import * as request from "superagent";
+import * as cloudinary from "cloudinary";
 
 @JsonController()
 export default class RecipeImageController {
-  imagekit = new ImageKit({
-    imagekitId: imageKitId,
-    apiKey: publicApiKey,
-    apiSecret: privateApiKey
-  });
-
   @Get("/recipes/:id/images/random")
   async getRandomImage(@Param("id") id: number) {
     {
@@ -48,51 +39,28 @@ export default class RecipeImageController {
   async uploadNewImage(
     @UploadedFile("file")
     file: any
-    // ,
-    // @Body() body: any
   ) {
+    let returnData;
+
     try {
-      // const imageBase64 = file.buffer.toString("base64");
+      const promise = new Promise((resolve, reject) =>
+        cloudinary.v2.uploader
+          .upload_stream({ resource_type: "image" }, (error, result) => {
+            if (error) reject(error);
+            resolve(result);
+          })
+          .end(file.buffer)
+      );
 
-      // let image;
-
-      // const filename = `dish-user-${body.userId}.jpg`;
-      const timestamp = parseInt(`${Date.now() / 1000}`, 10);
-
-      const signatureSeed = `apiKey=${publicApiKey}&filename=${file.name}&timestamp=${timestamp}`;
-
-      const shaObj = new jsSHA("SHA-1", "TEXT");
-      shaObj.setHMACKey(privateApiKey, "TEXT");
-      shaObj.update(signatureSeed);
-      const signature = shaObj.getHMAC("HEX");
-
-      await request
-        .post(`https://upload.imagekit.io/rest/api/image/v2/${imageKitId}`)
-        .set("Content-Type", "multipart/form-data")
-        .field({
-          // file: imageBase64,
-          apiKey: publicApiKey,
-          signature,
-          timestamp
-        })
-        .attach(file, file.name)
-        // .then(result => (image = result))
-        .then(_ => console.log("here") )
-        .catch(err => console.error(err));
-
-      // await this.imagekit
-      //   .upload(imageBase64, {
-      //     filename: "some-test",
-      //     folder: `user/${body.userId}`
-      //   })
-      //   .then(result =>
-      //     image = result)
-
-      console.log("Success");
-      // return { imageUrl: image.url };
+      await promise
+        .then(res => (returnData = res))
+        .catch(err => console.log(err));
     } catch (error) {
       console.log(error);
+      return "An error occurred";
     }
+
+    return { imageUrl: returnData.secure_url };
   }
 
   @Post("/recipes/:id/images/")
