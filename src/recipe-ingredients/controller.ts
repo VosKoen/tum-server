@@ -4,6 +4,7 @@ import {
   HttpCode,
   Param,
   Body,
+  Get,
   NotFoundError
 } from "routing-controllers";
 import RecipeIngredient from "./entity";
@@ -12,6 +13,18 @@ import Ingredient from "../ingredients/entity";
 
 @JsonController()
 export default class RecipeIngredientController {
+  @Get("/ingredients")
+  async getListOfIngredients() {
+    {
+      try {
+        return Ingredient.find();
+
+      } catch (error) {
+        console.log(`An error occured: ${error}`);
+      }
+    }
+  }
+
   @Post("/recipes/:recipeId/ingredients/:ingredientId")
   @HttpCode(201)
   async createRecipeIngredient(
