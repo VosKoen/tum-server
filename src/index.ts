@@ -9,6 +9,8 @@ import LoginController from "./logins/controller";
 import RecipeImageController from "./recipe-images/controller";
 import * as cloudinary from "cloudinary";
 import { cloudinarySettings } from "./constants";
+import SelectedRecipeController from "./selected-recipes/controller";
+import RecipeUserRatingController from "./recipe-user-rating/controller";
 
 const port = process.env.PORT || 4000;
 
@@ -20,7 +22,9 @@ export const app = createKoaServer({
     RecipeIngredientController,
     RecipeImageController,
     UserController,
-    LoginController
+    LoginController,
+    SelectedRecipeController,
+    RecipeUserRatingController
   ]
 });
 

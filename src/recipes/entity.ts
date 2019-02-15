@@ -1,9 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn
+} from "typeorm";
 import { BaseEntity } from "typeorm/repository/BaseEntity";
 import Step from "../recipe-steps/entity";
-import RecipeImage from '../recipe-images/entity'
+import RecipeImage from "../recipe-images/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
-import User from '../users/entity'
+import SelectedRecipe from "../selected-recipes/entity";
+import User from "../users/entity";
+import RecipeUserRating from "../recipe-user-rating/entity";
 
 @Entity()
 export default class Recipe extends BaseEntity {
@@ -19,6 +28,9 @@ export default class Recipe extends BaseEntity {
   @Column("int", { nullable: false })
   userId: number;
 
+  @Column("int", { nullable: true })
+  rating: number;
+
   @OneToMany(_ => Step, step => step.recipe)
   steps: Step[];
 
@@ -31,4 +43,10 @@ export default class Recipe extends BaseEntity {
   @ManyToOne(_ => User, user => user.recipes)
   @JoinColumn({ name: "user_id" })
   user: User;
+
+  @OneToMany(_ => SelectedRecipe, selectedRecipe => selectedRecipe.recipe)
+  selectedRecipes: SelectedRecipe[];
+
+  @OneToMany(_ => RecipeUserRating, recipeUserRating => recipeUserRating.recipe)
+  recipeUserRatings: RecipeUserRating[];
 }

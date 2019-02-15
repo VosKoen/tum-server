@@ -26,7 +26,7 @@ export default class RecipeStepController {
   @HttpCode(201)
   async createRecipeStep(@Param("id") id: number, @Body() step: Partial<Step>) {
     const recipe = await Recipe.findOne(id);
-    console.log(recipe)
+
     const newStep = Step.create({
       ...step,
       recipe
