@@ -5,7 +5,8 @@ import {
   Body,
   Param,
   NotFoundError,
-  ForbiddenError
+  ForbiddenError,
+  Get
 } from "routing-controllers";
 import Recipe from "../recipes/entity";
 import User from "../users/entity";
@@ -13,6 +14,24 @@ import RecipeUserRating from "./entity";
 
 @JsonController()
 export default class RecipeUserRatingController {
+  @Get("/recipes/:recipeId/users/:userId/ratings")
+  async getUserRecipes(
+    @Param("userId") userId: number,
+    @Param("recipeId") recipeId: number
+  ) {
+    const recipeUserRating = await RecipeUserRating.findOne({
+      where: {
+        recipeId,
+        userId
+      }
+    });
+
+    if(recipeUserRating) return recipeUserRating.recipeIsLiked
+
+    return null
+
+  }
+
   @Post("/recipes/:recipeId/users/:userId/ratings")
   @HttpCode(201)
   async setRecipeUserRating(
@@ -34,7 +53,6 @@ export default class RecipeUserRatingController {
 
     if (!user) throw new NotFoundError("Could not find a user with this id");
 
-   
     const oldRating = recipe.rating ? recipe.rating : 0;
 
     let firstRating = false;
@@ -43,17 +61,17 @@ export default class RecipeUserRatingController {
       RecipeUserRating.create({
         recipe,
         user,
-        positiveRating: body.recipeIsLiked
+        recipeIsLiked: body.recipeIsLiked
       }).save();
       firstRating = true;
     }
 
     if (recipeUserRating) {
-      if (body.recipeIsLiked === recipeUserRating.positiveRating) throw new ForbiddenError("The requested rating is already set as such") 
-
+      if (body.recipeIsLiked === recipeUserRating.recipeIsLiked)
+        throw new ForbiddenError("The requested rating is already set as such");
 
       RecipeUserRating.merge(recipeUserRating, {
-        positiveRating: body.recipeIsLiked
+        recipeIsLiked: body.recipeIsLiked
       }).save();
     }
     let increment = 2;
@@ -61,6 +79,9 @@ export default class RecipeUserRatingController {
     const newRating = body.recipeIsLiked
       ? oldRating + increment
       : oldRating - increment;
-    return Recipe.merge(recipe, { rating: newRating }).save();
+    return {
+      recipe: Recipe.merge(recipe, { rating: newRating }).save(),
+      recipeIsLiked: body.recipeIsLiked
+    };
   }
 }

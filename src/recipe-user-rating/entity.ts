@@ -21,5 +21,5 @@ export default class RecipeUserRating extends BaseEntity {
   userId: number;
 
   @Column("boolean", { nullable: false })
-  positiveRating: boolean;
+  recipeIsLiked: boolean;
 }
