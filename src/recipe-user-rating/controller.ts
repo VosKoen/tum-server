@@ -4,7 +4,8 @@ import {
   HttpCode,
   Body,
   Param,
-  NotFoundError
+  NotFoundError,
+  ForbiddenError
 } from "routing-controllers";
 import Recipe from "../recipes/entity";
 import User from "../users/entity";
@@ -19,7 +20,6 @@ export default class RecipeUserRatingController {
     @Param("recipeId") recipeId: number,
     @Body() body: { recipeIsLiked: boolean }
   ) {
-    console.log(body);
     const recipeUserRating = await RecipeUserRating.findOne({
       where: {
         recipeId,
@@ -34,6 +34,7 @@ export default class RecipeUserRatingController {
 
     if (!user) throw new NotFoundError("Could not find a user with this id");
 
+   
     const oldRating = recipe.rating ? recipe.rating : 0;
 
     let firstRating = false;
@@ -48,6 +49,9 @@ export default class RecipeUserRatingController {
     }
 
     if (recipeUserRating) {
+      if (body.recipeIsLiked === recipeUserRating.positiveRating) throw new ForbiddenError("The requested rating is already set as such") 
+
+
       RecipeUserRating.merge(recipeUserRating, {
         positiveRating: body.recipeIsLiked
       }).save();
