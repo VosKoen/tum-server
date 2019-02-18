@@ -13,6 +13,7 @@ import { getRepository } from "typeorm";
 import RecipeImage from "./entity";
 import Recipe from "../recipes/entity";
 import * as cloudinary from "cloudinary";
+import {imageFolder} from "../constants"
 
 @JsonController()
 export default class RecipeImageController {
@@ -45,7 +46,7 @@ export default class RecipeImageController {
     try {
       const promise = new Promise((resolve, reject) =>
         cloudinary.v2.uploader
-          .upload_stream({ resource_type: "image" }, (error, result) => {
+          .upload_stream({ resource_type: "image", folder: imageFolder }, (error, result) => {
             if (error) reject(error);
             resolve(result);
           })
