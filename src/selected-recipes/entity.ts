@@ -23,11 +23,11 @@ export default class SelectedRecipe extends BaseEntity {
   @Column("int", { nullable: false })
   userId: number;
 
-  @ManyToOne(_ => User, user => user.selectedRecipes)
+  @ManyToOne(_ => User, user => user.selectedRecipes, {onDelete:"CASCADE"})
   @JoinColumn({ name: "user_id" })
   user: User;
 
-  @ManyToOne(_ => Recipe, recipe => recipe.selectedRecipes)
+  @ManyToOne(_ => Recipe, recipe => recipe.selectedRecipes , {onDelete:"CASCADE"})
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;
 }

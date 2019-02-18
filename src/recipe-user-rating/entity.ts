@@ -6,7 +6,7 @@ import Recipe from '../recipes/entity'
 @Entity()
 export default class RecipeUserRating extends BaseEntity {
 
-  @ManyToOne(_ => Recipe, recipe => recipe.recipeUserRatings, {primary: true})
+  @ManyToOne(_ => Recipe, recipe => recipe.recipeUserRatings, {primary: true, onDelete:"CASCADE"})
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;
 

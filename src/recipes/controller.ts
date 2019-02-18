@@ -4,7 +4,9 @@ import {
   Post,
   HttpCode,
   Body,
-  Param
+  Param,
+  Delete,
+  NotFoundError
 } from "routing-controllers";
 import { getRepository } from "typeorm";
 import Recipe from "./entity";
@@ -26,12 +28,12 @@ const getIngredientDetails = completeRecipe => {
 
 @JsonController()
 export default class RecipeController {
-
   // Function to retrieve a random recipe with all relevant details from the database
-  @Get("/recipes/random")
+  @Get("/random-recipe")
   async getRandomRecipe() {
     {
       try {
+
         // Get a random recipe from the database
         const recipe: any = await getRepository(Recipe)
           .createQueryBuilder("recipe")
@@ -39,7 +41,33 @@ export default class RecipeController {
           .limit(1)
           .getOne();
 
-        // Retrieve the ingredients and steps belonging to this recipe  
+
+        // Retrieve the ingredients and steps belonging to this recipe
+        const completeRecipe = await getRepository(Recipe)
+          .createQueryBuilder("recipe")
+          .where("recipe.id = :id", { id: recipe.id })
+          .leftJoinAndSelect("recipe.recipeIngredients", "ingredient")
+          .leftJoinAndSelect("recipe.steps", "step")
+          .getOne();
+
+        // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
+        const ingredientDetails = await getIngredientDetails(completeRecipe);
+
+        return { ...completeRecipe, ingredientDetails };
+      } catch (error) {
+        console.log(`An error occured: ${error}`);
+      }
+    }
+  }
+
+  @Get("/recipes/:id")
+  async getRecipeById(@Param("id") id: number) {
+    {
+      try {
+        const recipe = await Recipe.findOne(id);
+        if (!recipe) throw new NotFoundError("Could not find recipe");
+
+        // Retrieve the ingredients and steps belonging to this recipe
         const completeRecipe = await getRepository(Recipe)
           .createQueryBuilder("recipe")
           .where("recipe.id = :id", { id: recipe.id })
@@ -79,5 +107,13 @@ export default class RecipeController {
   async createRecipe(@Body() recipe: Recipe) {
     const newRecipe = Recipe.create(recipe);
     return newRecipe.save();
+  }
+
+  @Delete("/recipes/:id")
+  @HttpCode(204)
+  async deleteRecipe(@Param("id") id: number) {
+    const recipe = await Recipe.findOne(id);
+    if (!recipe) throw new NotFoundError("Could not find recipe");
+    return Recipe.delete(recipe);
   }
 }

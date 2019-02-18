@@ -7,7 +7,7 @@ import IngredientAmountType from "../ingredient-amount-types/entity";
 @Entity()
 export default class RecipeIngredient extends BaseEntity {
 
-  @ManyToOne(_ => Recipe, recipe => recipe.recipeIngredients, {primary: true})
+  @ManyToOne(_ => Recipe, recipe => recipe.recipeIngredients, {primary: true, onDelete:"CASCADE"})
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;
 
