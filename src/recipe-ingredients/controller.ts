@@ -4,7 +4,6 @@ import {
   HttpCode,
   Param,
   Body,
-  Get,
   NotFoundError
 } from "routing-controllers";
 import RecipeIngredient from "./entity";
@@ -13,18 +12,6 @@ import Ingredient from "../ingredients/entity";
 
 @JsonController()
 export default class RecipeIngredientController {
-  @Get("/ingredients")
-  async getListOfIngredients() {
-    {
-      try {
-        return Ingredient.find();
-
-      } catch (error) {
-        console.log(`An error occured: ${error}`);
-      }
-    }
-  }
-
   @Post("/recipes/:recipeId/ingredients/:ingredientId")
   @HttpCode(201)
   async createRecipeIngredient(
@@ -36,10 +23,10 @@ export default class RecipeIngredientController {
     const ingredient = await Ingredient.findOne(ingredientId);
 
     if (!recipe)
-    throw new NotFoundError("Could not find a recipe with this id");
+      throw new NotFoundError("Could not find a recipe with this id");
 
     if (!ingredient)
-    throw new NotFoundError("Could not find an ingredient with this id");
+      throw new NotFoundError("Could not find an ingredient with this id");
 
     const recipeIngredient = { recipe, ingredient, ...recipeIngredientBody };
 

@@ -6,11 +6,20 @@ import {
   Body,
   Param,
   Delete,
-  NotFoundError
+  NotFoundError,
+  InternalServerError
 } from "routing-controllers";
 import { getRepository } from "typeorm";
 import Recipe from "./entity";
 import Ingredient from "../ingredients/entity";
+
+interface recipeIngredientWithDetails {
+  id: number;
+  name: string;
+  amountType: number;
+  amountNumber: number;
+  unit?: string;
+}
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
 const getIngredientDetails = completeRecipe => {
@@ -20,7 +29,16 @@ const getIngredientDetails = completeRecipe => {
         .createQueryBuilder("ingredient")
         .where("ingredient.id = :id", { id: ingredient.ingredientId })
         .getOne();
-      return { ...ingredient, ...ingredientDetails };
+      if (!ingredientDetails)
+        throw new InternalServerError("Something went wrong on the server.");
+
+      const ingredients: recipeIngredientWithDetails = {
+        id: ingredient.ingredientId,
+        name: ingredientDetails.name,
+        amountType: ingredient.amountType,
+        amountNumber: ingredient.amount
+      };
+      return ingredients;
     }
   );
   return Promise.all(ingredientsWithDetails);
@@ -33,14 +51,12 @@ export default class RecipeController {
   async getRandomRecipe() {
     {
       try {
-
         // Get a random recipe from the database
         const recipe: any = await getRepository(Recipe)
           .createQueryBuilder("recipe")
           .orderBy("RANDOM()")
           .limit(1)
           .getOne();
-
 
         // Retrieve the ingredients and steps belonging to this recipe
         const completeRecipe = await getRepository(Recipe)
@@ -51,9 +67,13 @@ export default class RecipeController {
           .getOne();
 
         // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
-        const ingredientDetails = await getIngredientDetails(completeRecipe);
+        const ingredients = await getIngredientDetails(completeRecipe);
 
-        return { ...completeRecipe, ingredientDetails };
+
+        if(completeRecipe)
+        delete completeRecipe.recipeIngredients;
+
+        return { ...completeRecipe, ingredients };
       } catch (error) {
         console.log(`An error occured: ${error}`);
       }
@@ -76,9 +96,12 @@ export default class RecipeController {
           .getOne();
 
         // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
-        const ingredientDetails = await getIngredientDetails(completeRecipe);
+        const ingredients = await getIngredientDetails(completeRecipe);
 
-        return { ...completeRecipe, ingredientDetails };
+        if(completeRecipe)
+        delete completeRecipe.recipeIngredients;
+
+        return { ...completeRecipe, ingredients };
       } catch (error) {
         console.log(`An error occured: ${error}`);
       }

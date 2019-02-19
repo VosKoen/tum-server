@@ -24,8 +24,8 @@ export default class RecipeIngredient extends BaseEntity {
   @Column("decimal", { nullable: false })
   amount: number;
 
-  @Column("text", { nullable: false })
-  amountType: string;
+  @Column("int", { nullable: false })
+  amountType: number;
 
   @ManyToOne(_ => IngredientAmountType, ingredientAmountType => ingredientAmountType.ingredients)
   @JoinColumn({ name: "amount_type" })
