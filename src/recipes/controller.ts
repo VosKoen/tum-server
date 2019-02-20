@@ -7,14 +7,17 @@ import {
   Param,
   Delete,
   NotFoundError,
-  InternalServerError
+  InternalServerError,
+  Put
 } from "routing-controllers";
 import { getRepository } from "typeorm";
 import Recipe from "./entity";
 import Ingredient from "../ingredients/entity";
+import RecipeIngredient from "../recipe-ingredients/entity";
+import Step from "../recipe-steps/entity";
 
 interface recipeIngredientWithDetails {
-  id: number;
+  ingredientId: number;
   name: string;
   amountType: number;
   amountNumber: number;
@@ -33,10 +36,10 @@ const getIngredientDetails = completeRecipe => {
         throw new InternalServerError("Something went wrong on the server.");
 
       const ingredients: recipeIngredientWithDetails = {
-        id: ingredient.ingredientId,
+        ingredientId: ingredient.ingredientId,
         name: ingredientDetails.name,
         amountType: ingredient.amountType,
-        amountNumber: ingredient.amount
+        amountNumber: ingredient.amountNumber
       };
       return ingredients;
     }
@@ -66,12 +69,14 @@ export default class RecipeController {
           .leftJoinAndSelect("recipe.steps", "step")
           .getOne();
 
+        //Sort the steps by column order
+        if (completeRecipe)
+          completeRecipe.steps.sort((a, b) => a.order - b.order);
+
         // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
         const ingredients = await getIngredientDetails(completeRecipe);
 
-
-        if(completeRecipe)
-        delete completeRecipe.recipeIngredients;
+        if (completeRecipe) delete completeRecipe.recipeIngredients;
 
         return { ...completeRecipe, ingredients };
       } catch (error) {
@@ -95,11 +100,14 @@ export default class RecipeController {
           .leftJoinAndSelect("recipe.steps", "step")
           .getOne();
 
+        //Sort the steps by column order
+        if (completeRecipe)
+          completeRecipe.steps.sort((a, b) => a.order - b.order);
+
         // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
         const ingredients = await getIngredientDetails(completeRecipe);
 
-        if(completeRecipe)
-        delete completeRecipe.recipeIngredients;
+        if (completeRecipe) delete completeRecipe.recipeIngredients;
 
         return { ...completeRecipe, ingredients };
       } catch (error) {
@@ -130,6 +138,127 @@ export default class RecipeController {
   async createRecipe(@Body() recipe: Recipe) {
     const newRecipe = Recipe.create(recipe);
     return newRecipe.save();
+  }
+
+  @Put("/recipes/:id")
+  async changeExistingRecipe(
+    @Param("id") id: number,
+    @Body() update: Partial<Recipe>
+  ) {
+    const recipe = await Recipe.findOne(id);
+    if (!recipe) throw new NotFoundError("Could not find recipe");
+
+    //Steps
+    if (update.steps) {
+      update.steps.map((step, index) => {
+        step.order = index;
+        step.recipeId = id;
+      });
+
+      //Remove deleted steps
+      const oldSteps = await Step.find({ where: { recipeId: id } });
+      oldSteps.map(async oldStep => {
+        if (
+          update.steps &&
+          !update.steps.find(newStep => oldStep.id === newStep.id)
+        )
+          try {
+            await Step.delete(oldStep);
+          } catch (error) {
+            console.log(error);
+          }
+      });
+
+      // Add new steps and change edited steps
+      update.steps.map(async step => {
+        if (!step.id) {
+          try {
+            const newStep = await Step.create({ ...step, recipe }).save();
+            step.id = newStep.id;
+          } catch (error) {
+            console.log(error);
+          }
+        } else {
+          try {
+            const oldStep = oldSteps.find(oldStep => oldStep.id === step.id);
+            if (oldStep) Step.merge(oldStep, step).save();
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    }
+
+    //Ingredients
+    if (update.recipeIngredients) {
+      update.recipeIngredients.map(ingredient => {
+        ingredient.recipeId = id;
+      });
+
+      //Remove deleted recipe-ingredients
+      const oldIngredients = await RecipeIngredient.find({
+        where: { recipeId: id }
+      });
+      oldIngredients.map(async oldIngredient => {
+        if (
+          update.recipeIngredients &&
+          !update.recipeIngredients.find(
+            newIngredient =>
+              oldIngredient.ingredientId === newIngredient.ingredientId
+          )
+        )
+          try {
+            await RecipeIngredient.delete(oldIngredient);
+          } catch (error) {
+            console.log(error);
+          }
+      });
+      // Add new recipe-ingredients and change edited recipe-ingredients
+      update.recipeIngredients.map(async recipeIngredient => {
+        if (
+          !oldIngredients.find(
+            oldIngredient =>
+              oldIngredient.ingredientId === recipeIngredient.ingredientId
+          )
+        ) {
+          try {
+            const ingredient = await Ingredient.findOne(
+              recipeIngredient.ingredientId
+            );
+            await RecipeIngredient.create({
+              recipe,
+              ingredient,
+              ...recipeIngredient
+            }).save();
+          } catch (error) {
+            console.log(error);
+          }
+        } else {
+          try {
+            const oldIngredient = oldIngredients.find(
+              oldIngredient =>
+                oldIngredient.ingredientId === recipeIngredient.ingredientId
+            );
+            if (oldIngredient)
+              RecipeIngredient.merge(oldIngredient, recipeIngredient).save();
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    }
+
+    //Images
+
+    console.log(recipe);
+    console.log(update);
+
+    const recipeMerge = {
+      title: update.title,
+      description: update.description
+    };
+
+    return Recipe.merge(recipe, recipeMerge).save();
   }
 
   @Delete("/recipes/:id")

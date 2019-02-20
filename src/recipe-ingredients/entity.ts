@@ -22,7 +22,7 @@ export default class RecipeIngredient extends BaseEntity {
   ingredientId: number;
 
   @Column("decimal", { nullable: false })
-  amount: number;
+  amountNumber: number;
 
   @Column("int", { nullable: false })
   amountType: number;
