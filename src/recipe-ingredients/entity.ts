@@ -1,8 +1,9 @@
-import { Entity, ManyToOne, Column, JoinColumn, PrimaryColumn } from "typeorm";
+import { Entity, Column, JoinColumn, PrimaryColumn, ManyToOne } from "typeorm";
 import { BaseEntity } from "typeorm/repository/BaseEntity";
 import Ingredient from "../ingredients/entity";
 import Recipe from '../recipes/entity'
 import IngredientAmountType from "../ingredient-amount-types/entity";
+import IngredientAmountTypeUnits from "../ingredient-amount-type-units/entity";
 
 @Entity()
 export default class RecipeIngredient extends BaseEntity {
@@ -27,7 +28,19 @@ export default class RecipeIngredient extends BaseEntity {
   @Column("int", { nullable: false })
   amountType: number;
 
-  @ManyToOne(_ => IngredientAmountType, ingredientAmountType => ingredientAmountType.ingredients)
-  @JoinColumn({ name: "amount_type" })
-  ingredientAmountType: IngredientAmountType;
+  @Column("int", { nullable: true })
+  amountTypeUnit: number;
+
+  // @ManyToOne(_ => IngredientAmountType, ingredientAmountType => ingredientAmountType.ingredients)
+  // @JoinColumn({ name: "amount_type" })
+  // ingredientAmountType: IngredientAmountType;
+
+  @ManyToOne(_ => IngredientAmountType)
+  @JoinColumn({name: "amount_type"})
+  IngredientAmountType: IngredientAmountType;
+
+  @ManyToOne(_ => IngredientAmountTypeUnits)
+  @JoinColumn({name: "amount_type_unit"})
+  IngredientAmountTypeUnit: IngredientAmountTypeUnits;
+
 }

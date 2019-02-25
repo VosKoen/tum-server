@@ -30,6 +30,7 @@ export default class RecipeIngredientController {
 
     const recipeIngredient = { recipe, ingredient, ...recipeIngredientBody };
 
+    console.log(recipeIngredient);
     const newRecipeIngredient = RecipeIngredient.create(recipeIngredient);
     return newRecipeIngredient.save();
   }
