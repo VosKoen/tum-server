@@ -15,6 +15,7 @@ import Recipe from "./entity";
 import Ingredient from "../ingredients/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
+import RecipeImage from "../recipe-images/entity";
 
 interface recipeIngredientWithDetails {
   ingredientId: number;
@@ -248,10 +249,21 @@ export default class RecipeController {
       });
     }
 
-    //Images
+    //Images, check if changed and if changed submit new image
+    // update.imageUrl
 
-    console.log(recipe);
-    console.log(update);
+    const images = await RecipeImage.find({ where: { recipeId: id } });
+
+    if (
+      update.recipeImages &&
+      images &&
+      update.recipeImages[0].imageUrl !== images[0].imageUrl
+    ) try {
+      RecipeImage.merge(images[0], update.recipeImages[0]).save();
+    }
+    catch(error) {
+      console.log(error)
+    }
 
     const recipeMerge = {
       title: update.title,
