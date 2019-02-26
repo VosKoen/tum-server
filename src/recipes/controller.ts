@@ -22,7 +22,7 @@ interface recipeIngredientWithDetails {
   name: string;
   amountType: number;
   amountNumber: number;
-  unit?: string;
+  amountTypeUnit?: string;
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
@@ -40,7 +40,8 @@ const getIngredientDetails = completeRecipe => {
         ingredientId: ingredient.ingredientId,
         name: ingredientDetails.name,
         amountType: ingredient.amountType,
-        amountNumber: ingredient.amountNumber
+        amountNumber: ingredient.amountNumber,
+        amountTypeUnit: ingredient.amountTypeUnit
       };
       return ingredients;
     }
