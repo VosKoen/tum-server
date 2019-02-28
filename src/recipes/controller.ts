@@ -16,13 +16,16 @@ import Ingredient from "../ingredients/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
 import RecipeImage from "../recipe-images/entity";
+import IngredientAmountTypeUnits from "../ingredient-amount-type-units/entity";
 
 interface recipeIngredientWithDetails {
   ingredientId: number;
   name: string;
   amountType: number;
   amountNumber: number;
-  amountTypeUnit?: string;
+  amountTypeUnit?: number;
+  amountTypeUnitName?: string;
+  amountTypeUnitShorthand?: string;
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
@@ -36,14 +39,25 @@ const getIngredientDetails = completeRecipe => {
       if (!ingredientDetails)
         throw new InternalServerError("Something went wrong on the server.");
 
-      const ingredients: recipeIngredientWithDetails = {
+      const ingredientObject: recipeIngredientWithDetails = {
         ingredientId: ingredient.ingredientId,
         name: ingredientDetails.name,
         amountType: ingredient.amountType,
         amountNumber: ingredient.amountNumber,
         amountTypeUnit: ingredient.amountTypeUnit
       };
-      return ingredients;
+
+      if (ingredient.amountTypeUnit) {
+        const amountTypeUnit = await IngredientAmountTypeUnits.findOne(
+          ingredient.amountTypeUnit
+        );
+        if (amountTypeUnit) {
+          ingredientObject.amountTypeUnitName = amountTypeUnit.name;
+          ingredientObject.amountTypeUnitShorthand = amountTypeUnit.shorthand;
+        }
+      }
+
+      return ingredientObject;
     }
   );
   return Promise.all(ingredientsWithDetails);
@@ -227,9 +241,10 @@ export default class RecipeController {
             const ingredient = await Ingredient.findOne(
               recipeIngredient.ingredientId
             );
-            console.log(recipe, ingredient, recipeIngredient)
-          
-            if (!recipeIngredient.amountTypeUnit) recipeIngredient.amountTypeUnit = null
+            console.log(recipe, ingredient, recipeIngredient);
+
+            if (!recipeIngredient.amountTypeUnit)
+              recipeIngredient.amountTypeUnit = null;
             await RecipeIngredient.create({
               recipe,
               ingredient,

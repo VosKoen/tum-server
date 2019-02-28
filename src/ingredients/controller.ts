@@ -4,7 +4,7 @@ import Ingredient from "./entity";
 @JsonController()
 export default class IngredientController {
   @Get("/ingredients")
-  async getListOfIngredients() {
+  getListOfIngredients() {
     {
       try {
         return Ingredient.find();
@@ -13,4 +13,5 @@ export default class IngredientController {
       }
     }
   }
+  
 }
