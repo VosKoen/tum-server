@@ -28,9 +28,9 @@ export default class RecipeIngredientController {
     if (!ingredient)
       throw new NotFoundError("Could not find an ingredient with this id");
 
+    if (!recipeIngredientBody.amountTypeUnit) recipeIngredientBody.amountTypeUnit = null
     const recipeIngredient = { recipe, ingredient, ...recipeIngredientBody };
-
-    console.log(recipeIngredient);
+    
     const newRecipeIngredient = RecipeIngredient.create(recipeIngredient);
     return newRecipeIngredient.save();
   }

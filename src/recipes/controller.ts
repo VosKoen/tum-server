@@ -227,6 +227,9 @@ export default class RecipeController {
             const ingredient = await Ingredient.findOne(
               recipeIngredient.ingredientId
             );
+            console.log(recipe, ingredient, recipeIngredient)
+          
+            if (!recipeIngredient.amountTypeUnit) recipeIngredient.amountTypeUnit = null
             await RecipeIngredient.create({
               recipe,
               ingredient,
@@ -254,16 +257,18 @@ export default class RecipeController {
     // update.imageUrl
 
     const images = await RecipeImage.find({ where: { recipeId: id } });
-
     if (
       update.recipeImages &&
+      update.recipeImages[0] &&
       images &&
+      images[0] &&
       update.recipeImages[0].imageUrl !== images[0].imageUrl
-    ) try {
-      RecipeImage.merge(images[0], update.recipeImages[0]).save();
-    }
-    catch(error) {
-      console.log(error)
+    ) {
+      try {
+        RecipeImage.merge(images[0], update.recipeImages[0]).save();
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     const recipeMerge = {
@@ -271,7 +276,7 @@ export default class RecipeController {
       description: update.description
     };
 
-    return Recipe.merge(recipe, recipeMerge).save();
+    return await Recipe.merge(recipe, recipeMerge).save();
   }
 
   @Delete("/recipes/:id")

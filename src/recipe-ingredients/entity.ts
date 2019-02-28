@@ -29,7 +29,7 @@ export default class RecipeIngredient extends BaseEntity {
   amountType: number;
 
   @Column("int", { nullable: true })
-  amountTypeUnit: number;
+  amountTypeUnit: number|null;
 
   // @ManyToOne(_ => IngredientAmountType, ingredientAmountType => ingredientAmountType.ingredients)
   // @JoinColumn({ name: "amount_type" })
