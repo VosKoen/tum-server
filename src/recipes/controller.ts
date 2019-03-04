@@ -16,16 +16,11 @@ import Ingredient from "../ingredients/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
 import RecipeImage from "../recipe-images/entity";
-import IngredientAmountTypeUnits from "../ingredient-amount-type-units/entity";
 
 interface recipeIngredientWithDetails {
   ingredientId: number;
   name: string;
-  amountType: number;
-  amountNumber: number;
-  amountTypeUnit?: number;
-  amountTypeUnitName?: string;
-  amountTypeUnitShorthand?: string;
+  amount: string;
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
@@ -42,20 +37,8 @@ const getIngredientDetails = completeRecipe => {
       const ingredientObject: recipeIngredientWithDetails = {
         ingredientId: ingredient.ingredientId,
         name: ingredientDetails.name,
-        amountType: ingredient.amountType,
-        amountNumber: ingredient.amountNumber,
-        amountTypeUnit: ingredient.amountTypeUnit
+        amount: ingredient.amount
       };
-
-      if (ingredient.amountTypeUnit) {
-        const amountTypeUnit = await IngredientAmountTypeUnits.findOne(
-          ingredient.amountTypeUnit
-        );
-        if (amountTypeUnit) {
-          ingredientObject.amountTypeUnitName = amountTypeUnit.name;
-          ingredientObject.amountTypeUnitShorthand = amountTypeUnit.shorthand;
-        }
-      }
 
       return ingredientObject;
     }
@@ -243,8 +226,6 @@ export default class RecipeController {
             );
             console.log(recipe, ingredient, recipeIngredient);
 
-            if (!recipeIngredient.amountTypeUnit)
-              recipeIngredient.amountTypeUnit = null;
             await RecipeIngredient.create({
               recipe,
               ingredient,
