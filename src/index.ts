@@ -12,7 +12,6 @@ import { cloudinarySettings } from "./constants";
 import SelectedRecipeController from "./selected-recipes/controller";
 import RecipeUserRatingController from "./recipe-user-rating/controller";
 import IngredientController from "./ingredients/controller";
-import IngredientAmountTypeController from "./ingredient-amount-type-units/controller";
 
 const port = process.env.PORT || 4000;
 
@@ -28,7 +27,6 @@ export const app = createKoaServer({
     SelectedRecipeController,
     RecipeUserRatingController,
     IngredientController,
-    IngredientAmountTypeController
   ]
 });
 
