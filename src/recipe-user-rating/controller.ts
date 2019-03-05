@@ -26,7 +26,9 @@ export default class RecipeUserRatingController {
       }
     });
 
-    if(recipeUserRating) return recipeUserRating.recipeIsLiked
+    const recipe = await Recipe.findOne(recipeId)
+
+    if(recipeUserRating && recipe) return {recipeIsLiked: recipeUserRating.recipeIsLiked, newRating: recipe.rating}
 
     return null
 
@@ -81,7 +83,8 @@ export default class RecipeUserRatingController {
       : oldRating - increment;
     return {
       recipe: Recipe.merge(recipe, { rating: newRating }).save(),
-      recipeIsLiked: body.recipeIsLiked
+      recipeIsLiked: body.recipeIsLiked,
+      newRating
     };
   }
 }
