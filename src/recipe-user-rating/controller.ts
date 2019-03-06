@@ -27,10 +27,11 @@ export default class RecipeUserRatingController {
     });
 
     const recipe = await Recipe.findOne(recipeId)
+    if(!recipe) throw new NotFoundError(`No recipe found with id ${recipeId}`)
 
-    if(recipeUserRating && recipe) return {recipeIsLiked: recipeUserRating.recipeIsLiked, newRating: recipe.rating}
+    if(recipeUserRating) return {recipeIsLiked: recipeUserRating.recipeIsLiked, newRating: recipe.rating}
 
-    return null
+    return {recipeIsLiked: null, newRating: recipe.rating}
 
   }
 
