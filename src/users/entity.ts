@@ -11,6 +11,7 @@ import * as bcrypt from "bcrypt";
 import Recipe from "../recipes/entity";
 import SelectedRecipe from "../selected-recipes/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
+import RequestedIngredient from "../requested-ingredients/entity";
 
 @Entity()
 export default class User extends BaseEntity {
@@ -44,4 +45,7 @@ export default class User extends BaseEntity {
 
   @OneToMany(_ => RecipeUserRating, recipeUserRating => recipeUserRating.user)
   recipeUserRatings: RecipeUserRating[];
+
+  @OneToMany(_ => RequestedIngredient, requestedIngredient => requestedIngredient.user)
+  requestedIngredients: RequestedIngredient[];
 }
