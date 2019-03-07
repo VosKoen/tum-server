@@ -8,7 +8,8 @@ import {
   Delete,
   NotFoundError,
   InternalServerError,
-  Put
+  Put,
+  QueryParams
 } from "routing-controllers";
 import { getRepository, getConnection } from "typeorm";
 import Recipe from "./entity";
@@ -18,10 +19,15 @@ import Step from "../recipe-steps/entity";
 import RecipeImage from "../recipe-images/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
 
-interface recipeIngredientWithDetails {
+interface RecipeIngredientWithDetails {
   ingredientId: number;
   name: string;
   amount: string;
+}
+
+export interface Pagination {
+  limit: number;
+  offset: number;
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
@@ -35,7 +41,7 @@ const getIngredientDetails = completeRecipe => {
       if (!ingredientDetails)
         throw new InternalServerError("Something went wrong on the server.");
 
-      const ingredientObject: recipeIngredientWithDetails = {
+      const ingredientObject: RecipeIngredientWithDetails = {
         ingredientId: ingredient.ingredientId,
         name: ingredientDetails.name,
         amount: ingredient.amount
@@ -118,13 +124,16 @@ export default class RecipeController {
 
   // Function to get all recipes created by a specific user
   @Get("/users/:id/recipes")
-  async getUserRecipes(@Param("id") id: number) {
+  async getUserRecipes(@Param("id") id: number, @QueryParams() pagination: Pagination) {
     {
       try {
-        const recipes: any = await getRepository(Recipe)
-          .createQueryBuilder("recipe")
-          .where("recipe.userId = :id", { id: id })
-          .getMany();
+        const recipes = await Recipe.findAndCount({
+          where: {
+            userId: id
+          },
+          skip: pagination.offset,
+          take: pagination.limit
+        })
 
         return recipes;
       } catch (error) {
