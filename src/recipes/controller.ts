@@ -10,12 +10,13 @@ import {
   InternalServerError,
   Put
 } from "routing-controllers";
-import { getRepository } from "typeorm";
+import { getRepository, getConnection } from "typeorm";
 import Recipe from "./entity";
 import Ingredient from "../ingredients/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
 import RecipeImage from "../recipe-images/entity";
+import RecipeUserRating from "../recipe-user-rating/entity";
 
 interface recipeIngredientWithDetails {
   ingredientId: number;
@@ -147,9 +148,11 @@ export default class RecipeController {
     const recipe = await Recipe.findOne(id);
     if (!recipe) throw new NotFoundError("Could not find recipe");
 
+    let isRatingResetRequired = false;
     //Steps
     if (update.steps) {
       update.steps.map((step, index) => {
+        if (step.order !== index) isRatingResetRequired = true;
         step.order = index;
         step.recipeId = id;
       });
@@ -163,6 +166,7 @@ export default class RecipeController {
         )
           try {
             await Step.delete(oldStep);
+            isRatingResetRequired = true;
           } catch (error) {
             console.log(error);
           }
@@ -172,6 +176,7 @@ export default class RecipeController {
       update.steps.map(async step => {
         if (!step.id) {
           try {
+            isRatingResetRequired = true;
             const newStep = await Step.create({ ...step, recipe }).save();
             step.id = newStep.id;
           } catch (error) {
@@ -180,7 +185,12 @@ export default class RecipeController {
         } else {
           try {
             const oldStep = oldSteps.find(oldStep => oldStep.id === step.id);
-            if (oldStep) Step.merge(oldStep, step).save();
+
+            if (oldStep) {
+              if (oldStep.description !== step.description)
+                isRatingResetRequired = true;
+              Step.merge(oldStep, step).save();
+            }
           } catch (error) {
             console.log(error);
           }
@@ -207,6 +217,7 @@ export default class RecipeController {
           )
         )
           try {
+            isRatingResetRequired = true;
             await RecipeIngredient.delete(oldIngredient);
           } catch (error) {
             console.log(error);
@@ -221,10 +232,11 @@ export default class RecipeController {
           )
         ) {
           try {
+            isRatingResetRequired = true;
+
             const ingredient = await Ingredient.findOne(
               recipeIngredient.ingredientId
             );
-            console.log(recipe, ingredient, recipeIngredient);
 
             await RecipeIngredient.create({
               recipe,
@@ -240,8 +252,11 @@ export default class RecipeController {
               oldIngredient =>
                 oldIngredient.ingredientId === recipeIngredient.ingredientId
             );
-            if (oldIngredient)
+            if (oldIngredient) {
+              if (oldIngredient.amount !== recipeIngredient.amount)
+                isRatingResetRequired = true;
               RecipeIngredient.merge(oldIngredient, recipeIngredient).save();
+            }
           } catch (error) {
             console.log(error);
           }
@@ -267,10 +282,22 @@ export default class RecipeController {
       }
     }
 
-    const recipeMerge = {
+    const recipeMerge: Partial<Recipe> = {
       title: update.title,
-      description: update.description
+      description: update.description,
     };
+
+    if (isRatingResetRequired) {
+      recipeMerge.rating = 0;
+
+     getConnection()
+    .createQueryBuilder()
+    .delete()
+    .from(RecipeUserRating)
+    .where("recipeId = :id", { id })
+    .execute();
+    }
+
 
     return await Recipe.merge(recipe, recipeMerge).save();
   }
