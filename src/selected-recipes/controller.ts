@@ -3,12 +3,14 @@ import {
   Param,
   Post,
   HttpCode,
-  Get
+  Get,
+  QueryParams
 } from "routing-controllers";
 import User from "../users/entity";
 import Recipe from "../recipes/entity";
 import SelectedRecipe from "../selected-recipes/entity";
 import { getRepository } from "typeorm";
+import { Pagination} from "../recipes/controller"
 
 interface RecipeHistoryEntry {
   recipeId: SelectedRecipe["recipeId"];
@@ -39,16 +41,22 @@ export default class SelectedRecipeController {
   }
 
   @Get("/users/:userId/selected-recipes")
-  async getRecipeHistory(@Param("userId") userId: number) {
+  async getRecipeHistory(@Param("userId") userId: number, @QueryParams() pagination: Pagination) {
+
     try {
       const history = await getRepository(SelectedRecipe)
         .createQueryBuilder("selectedRecipe")
         .innerJoinAndSelect("selectedRecipe.recipe", "recipe")
         .where("selectedRecipe.userId = :userId", { userId })
-        .getMany();
+        .limit(pagination.limit)
+        .offset(pagination.offset)
+        .getManyAndCount();
+
+      const recipes = history[0];
+      const count = history[1];
 
       if (history) {
-        const recipeHistory: RecipeHistory = history.map(item => {
+        const recipeHistory: RecipeHistory = recipes.map(item => {
           const historyItem: RecipeHistoryEntry = {
             recipeId: item.recipeId,
             title: item.recipe.title,
@@ -56,9 +64,9 @@ export default class SelectedRecipeController {
           };
           return historyItem;
         });
-        return recipeHistory;
+        return [recipeHistory, count ];
       }
-      return [];
+      return [[], null];
     } catch (error) {
       console.log(error);
       throw new Error(
