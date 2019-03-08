@@ -18,7 +18,7 @@ export default class LoginController {
   async authenticate(
     @Body() { email, password }: AuthenticatePayload
   ) {
-    const user = await User.findOne({ where: { email } })
+    const user = await User.findOne({ where: { email: email.toLowerCase() } })
     if (!user || !user.id || !await user.checkPassword(password)) throw new BadRequestError('The combination of email address and password is not valid')
 
     const jwt = sign({ id: user.id })
