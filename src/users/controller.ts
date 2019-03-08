@@ -9,11 +9,8 @@ export default class UserController {
     @Body() data: User
   ) {
     const {password, email, ...rest} = data
-    console.log(password, email, rest)
     
     const existingUser = await User.findOne({where: {email: email.toLowerCase()}})
-    console.log(existingUser)
-
     if(existingUser) throw new BadRequestError("User with this username already exists") 
 
     const entity = User.create({...rest, email: email.toLowerCase()})
