@@ -1,4 +1,4 @@
-import { JsonController, Post, Body, BadRequestError } from 'routing-controllers'
+import { JsonController, Post, Body, ForbiddenError } from 'routing-controllers'
 import User from './entity';
 
 @JsonController()
@@ -11,7 +11,7 @@ export default class UserController {
     const {password, email, ...rest} = data
     
     const existingUser = await User.findOne({where: {email: email.toLowerCase()}})
-    if(existingUser) throw new BadRequestError("User with this username already exists") 
+    if(existingUser) throw new ForbiddenError("User with this username already exists") 
 
     const entity = User.create({...rest, email: email.toLowerCase()})
     await entity.setPassword(password)
