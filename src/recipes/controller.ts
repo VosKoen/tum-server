@@ -31,7 +31,7 @@ export interface Pagination {
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
-const getIngredientDetails = completeRecipe => {
+const getIngredientDetails = (completeRecipe: Recipe) => {
   const ingredientsWithDetails = completeRecipe.recipeIngredients.map(
     async ingredient => {
       const ingredientDetails = await getRepository(Ingredient)
@@ -76,8 +76,10 @@ export default class RecipeController {
           .getOne();
 
         //Sort the steps by column order
-        if (completeRecipe)
-          completeRecipe.steps.sort((a, b) => a.order - b.order);
+        if (!completeRecipe)
+          throw new InternalServerError("Internal server error");
+
+        completeRecipe.steps.sort((a, b) => a.order - b.order);
 
         // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
         const ingredients = await getIngredientDetails(completeRecipe);
@@ -107,8 +109,10 @@ export default class RecipeController {
           .getOne();
 
         //Sort the steps by column order
-        if (completeRecipe)
-          completeRecipe.steps.sort((a, b) => a.order - b.order);
+        if (!completeRecipe)
+          throw new InternalServerError("Internal server error");
+
+        completeRecipe.steps.sort((a, b) => a.order - b.order);
 
         // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
         const ingredients = await getIngredientDetails(completeRecipe);
@@ -124,7 +128,10 @@ export default class RecipeController {
 
   // Function to get all recipes created by a specific user
   @Get("/users/:id/recipes")
-  async getUserRecipes(@Param("id") id: number, @QueryParams() pagination: Pagination) {
+  async getUserRecipes(
+    @Param("id") id: number,
+    @QueryParams() pagination: Pagination
+  ) {
     {
       try {
         const recipes = await Recipe.findAndCount({
@@ -133,7 +140,7 @@ export default class RecipeController {
           },
           skip: pagination.offset,
           take: pagination.limit
-        })
+        });
 
         return recipes;
       } catch (error) {
@@ -293,20 +300,19 @@ export default class RecipeController {
 
     const recipeMerge: Partial<Recipe> = {
       title: update.title,
-      description: update.description,
+      description: update.description
     };
 
     if (isRatingResetRequired) {
       recipeMerge.rating = 0;
 
-     getConnection()
-    .createQueryBuilder()
-    .delete()
-    .from(RecipeUserRating)
-    .where("recipeId = :id", { id })
-    .execute();
+      getConnection()
+        .createQueryBuilder()
+        .delete()
+        .from(RecipeUserRating)
+        .where("recipeId = :id", { id })
+        .execute();
     }
-
 
     return await Recipe.merge(recipe, recipeMerge).save();
   }
