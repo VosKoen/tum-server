@@ -21,7 +21,7 @@ export default class RecipeImageController {
   async getRandomImage(@Param("id") id: number) {
     {
       try {
-        const image: any = await getRepository(RecipeImage)
+        const image = await getRepository(RecipeImage)
           .createQueryBuilder("recipeImage")
           .where("recipe_id = :id", { id: id })
           .orderBy("RANDOM()")
@@ -39,8 +39,9 @@ export default class RecipeImageController {
   @HttpCode(201)
   async uploadNewImage(
     @UploadedFile("file")
-    file: any
+    file: Buffer
   ) {
+
     let returnData;
 
     try {
