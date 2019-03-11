@@ -31,6 +31,7 @@ export default class User extends BaseEntity {
   async setPassword(rawPassword: string) {
     const hash = await bcrypt.hash(rawPassword, 8);
     this.password = hash;
+
   }
 
   checkPassword(rawPassword: string): Promise<boolean> {
