@@ -296,7 +296,9 @@ export default class RecipeController {
 
     const recipeMerge: Partial<Recipe> = {
       title: update.title,
-      description: update.description
+      description: update.description,
+      timeNeeded: update.timeNeeded,
+      servings: update.servings
     };
 
     if (isRatingResetRequired) {
