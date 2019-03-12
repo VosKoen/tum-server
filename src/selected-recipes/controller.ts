@@ -48,6 +48,7 @@ export default class SelectedRecipeController {
         .createQueryBuilder("selectedRecipe")
         .innerJoinAndSelect("selectedRecipe.recipe", "recipe")
         .where("selectedRecipe.userId = :userId", { userId })
+        .orderBy('selectedRecipe.selectedTimestamp', 'DESC')
         .limit(pagination.limit)
         .offset(pagination.offset)
         .getManyAndCount();
