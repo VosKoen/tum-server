@@ -26,6 +26,12 @@ export default class Recipe extends BaseEntity {
   description: string;
 
   @Column("int", { nullable: false })
+  timeNeeded: number;
+
+  @Column("int", { nullable: false })
+  servings: number;
+
+  @Column("int", { nullable: false })
   userId: number;
 
   @Column("int", { nullable: true })

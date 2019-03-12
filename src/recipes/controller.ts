@@ -39,7 +39,7 @@ const getIngredientDetails = (completeRecipe: Recipe) => {
         .where("ingredient.id = :id", { id: ingredient.ingredientId })
         .getOne();
       if (!ingredientDetails)
-        throw new InternalServerError("Something went wrong on the server.");
+        throw new InternalServerError("Something went wrong.");
 
       const ingredientObject: RecipeIngredientWithDetails = {
         ingredientId: ingredient.ingredientId,
@@ -51,6 +51,34 @@ const getIngredientDetails = (completeRecipe: Recipe) => {
     }
   );
   return Promise.all(ingredientsWithDetails);
+};
+
+const getCompleteRecipe = async (recipeId: number) => {
+  try {
+    // Retrieve the ingredients and steps belonging to this recipe
+    const completeRecipe = await getRepository(Recipe)
+      .createQueryBuilder("recipe")
+      .where("recipe.id = :id", { id: recipeId })
+      .leftJoinAndSelect("recipe.recipeIngredients", "ingredient")
+      .leftJoinAndSelect("recipe.steps", "step")
+      .getOne();
+
+    //Sort the steps by column order
+    if (!completeRecipe)
+      throw new NotFoundError("Recipe not found");
+
+    completeRecipe.steps.sort((a, b) => a.order - b.order);
+
+    // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
+    const ingredients = await getIngredientDetails(completeRecipe);
+
+    if (completeRecipe) delete completeRecipe.recipeIngredients;
+
+    return { ...completeRecipe, ingredients };
+  } catch (e) {
+    console.log(e);
+    throw new InternalServerError("Something went wrong");
+  }
 };
 
 @JsonController()
@@ -67,28 +95,13 @@ export default class RecipeController {
           .limit(1)
           .getOne();
 
-        // Retrieve the ingredients and steps belonging to this recipe
-        const completeRecipe = await getRepository(Recipe)
-          .createQueryBuilder("recipe")
-          .where("recipe.id = :id", { id: recipe.id })
-          .leftJoinAndSelect("recipe.recipeIngredients", "ingredient")
-          .leftJoinAndSelect("recipe.steps", "step")
-          .getOne();
+        //Get all relevant recipe information
+        const completeRecipe = await getCompleteRecipe(recipe.id);
+        return completeRecipe;
 
-        //Sort the steps by column order
-        if (!completeRecipe)
-          throw new InternalServerError("Internal server error");
-
-        completeRecipe.steps.sort((a, b) => a.order - b.order);
-
-        // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
-        const ingredients = await getIngredientDetails(completeRecipe);
-
-        if (completeRecipe) delete completeRecipe.recipeIngredients;
-
-        return { ...completeRecipe, ingredients };
       } catch (error) {
         console.log(`An error occured: ${error}`);
+        throw new InternalServerError("Something went wrong");
       }
     }
   }
@@ -97,31 +110,13 @@ export default class RecipeController {
   async getRecipeById(@Param("id") id: number) {
     {
       try {
-        const recipe = await Recipe.findOne(id);
-        if (!recipe) throw new NotFoundError("Could not find recipe");
 
-        // Retrieve the ingredients and steps belonging to this recipe
-        const completeRecipe = await getRepository(Recipe)
-          .createQueryBuilder("recipe")
-          .where("recipe.id = :id", { id: recipe.id })
-          .leftJoinAndSelect("recipe.recipeIngredients", "ingredient")
-          .leftJoinAndSelect("recipe.steps", "step")
-          .getOne();
+        const completeRecipe = await getCompleteRecipe(id);
+        return completeRecipe;
 
-        //Sort the steps by column order
-        if (!completeRecipe)
-          throw new InternalServerError("Internal server error");
-
-        completeRecipe.steps.sort((a, b) => a.order - b.order);
-
-        // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
-        const ingredients = await getIngredientDetails(completeRecipe);
-
-        if (completeRecipe) delete completeRecipe.recipeIngredients;
-
-        return { ...completeRecipe, ingredients };
       } catch (error) {
-        console.log(`An error occured: ${error}`);
+        console.log(`An error occured: ${error}`)
+        throw new InternalServerError("Something went wrong");
       }
     }
   }
@@ -139,12 +134,16 @@ export default class RecipeController {
             userId: id
           },
           skip: pagination.offset,
-          take: pagination.limit
+          take: pagination.limit,
+          order: {
+            id: "DESC"
+          }
         });
 
         return recipes;
       } catch (error) {
         console.log(`An error occured: ${error}`);
+        throw new InternalServerError("Something went wrong");
       }
     }
   }
@@ -300,7 +299,9 @@ export default class RecipeController {
 
     const recipeMerge: Partial<Recipe> = {
       title: update.title,
-      description: update.description
+      description: update.description,
+      timeNeeded: update.timeNeeded,
+      servings: update.servings
     };
 
     if (isRatingResetRequired) {
