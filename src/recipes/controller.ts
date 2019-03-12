@@ -134,7 +134,10 @@ export default class RecipeController {
             userId: id
           },
           skip: pagination.offset,
-          take: pagination.limit
+          take: pagination.limit,
+          order: {
+            id: "DESC"
+          }
         });
 
         return recipes;
