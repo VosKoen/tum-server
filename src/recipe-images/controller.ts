@@ -13,7 +13,7 @@ import { getRepository } from "typeorm";
 import RecipeImage from "./entity";
 import Recipe from "../recipes/entity";
 import * as cloudinary from "cloudinary";
-import {imageFolder} from "../constants"
+import {imageFolder, imageTransformGradient} from "../constants"
 
 @JsonController()
 export default class RecipeImageController {
@@ -27,6 +27,12 @@ export default class RecipeImageController {
           .orderBy("RANDOM()")
           .limit(1)
           .getOne();
+
+        if(!image) throw new NotFoundError("No image found")
+
+        //Add tranform Cloudinary
+        const regExp = new RegExp('/v[0-9]+/');
+        image.imageUrl = image.imageUrl.replace(regExp,imageTransformGradient)
 
         return image;
       } catch (error) {
