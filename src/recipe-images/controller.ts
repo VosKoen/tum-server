@@ -45,7 +45,7 @@ export default class RecipeImageController {
   @HttpCode(201)
   async uploadNewImage(
     @UploadedFile("file")
-    file: Buffer
+    file: any
   ) {
 
     let returnData;
