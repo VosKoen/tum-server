@@ -30,6 +30,10 @@ export interface Pagination {
   offset: number;
 }
 
+export interface Filters {
+  preparationTime?: string;
+}
+
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
 const getIngredientDetails = (completeRecipe: Recipe) => {
   const ingredientsWithDetails = completeRecipe.recipeIngredients.map(
@@ -64,8 +68,7 @@ const getCompleteRecipe = async (recipeId: number) => {
       .getOne();
 
     //Sort the steps by column order
-    if (!completeRecipe)
-      throw new NotFoundError("Recipe not found");
+    if (!completeRecipe) throw new NotFoundError("Recipe not found");
 
     completeRecipe.steps.sort((a, b) => a.order - b.order);
 
@@ -85,39 +88,38 @@ const getCompleteRecipe = async (recipeId: number) => {
 export default class RecipeController {
   // Function to retrieve a random recipe with all relevant details from the database
   @Get("/random-recipe")
-  async getRandomRecipe() {
-    {
-      try {
-        // Get a random recipe from the database
-        const recipe: any = await getRepository(Recipe)
-          .createQueryBuilder("recipe")
-          .orderBy("RANDOM()")
-          .limit(1)
-          .getOne();
+  async getRandomRecipe(@QueryParams() queryInput: Filters) {
 
-        //Get all relevant recipe information
-        const completeRecipe = await getCompleteRecipe(recipe.id);
-        return completeRecipe;
+    try {
 
-      } catch (error) {
-        console.log(`An error occured: ${error}`);
-        throw new InternalServerError("Something went wrong");
-      }
+      const query = getRepository(Recipe).createQueryBuilder("recipe")
+
+      //Filter on preparation time
+      if(queryInput.preparationTime) query.andWhere('recipe.timeNeeded <= :preparationTime', {preparationTime: queryInput.preparationTime})
+
+      // Get a random recipe from the database
+      const recipe: any = await query
+        .orderBy("RANDOM()")
+        .limit(1)
+        .getOne();
+    
+      //Get all relevant recipe information
+      const completeRecipe = await getCompleteRecipe(recipe.id);
+      return completeRecipe;
+    } catch (error) {
+      console.log(`An error occured: ${error}`);
+      throw new InternalServerError("Something went wrong");
     }
   }
 
   @Get("/recipes/:id")
   async getRecipeById(@Param("id") id: number) {
-    {
-      try {
-
-        const completeRecipe = await getCompleteRecipe(id);
-        return completeRecipe;
-
-      } catch (error) {
-        console.log(`An error occured: ${error}`)
-        throw new InternalServerError("Something went wrong");
-      }
+    try {
+      const completeRecipe = await getCompleteRecipe(id);
+      return completeRecipe;
+    } catch (error) {
+      console.log(`An error occured: ${error}`);
+      throw new InternalServerError("Something went wrong");
     }
   }
 
@@ -127,7 +129,7 @@ export default class RecipeController {
     @Param("id") id: number,
     @QueryParams() pagination: Pagination
   ) {
-    {
+    
       try {
         const recipes = await Recipe.findAndCount({
           where: {
@@ -145,7 +147,7 @@ export default class RecipeController {
         console.log(`An error occured: ${error}`);
         throw new InternalServerError("Something went wrong");
       }
-    }
+    
   }
 
   @Post("/recipes")
