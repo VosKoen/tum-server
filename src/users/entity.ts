@@ -12,6 +12,7 @@ import Recipe from "../recipes/entity";
 import SelectedRecipe from "../selected-recipes/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
 import RequestedIngredient from "../requested-ingredients/entity";
+import RecipeImage from "../recipe-images/entity";
 
 @Entity()
 export default class User extends BaseEntity {
@@ -40,6 +41,9 @@ export default class User extends BaseEntity {
 
   @OneToMany(_ => Recipe, recipe => recipe.user)
   recipes: Recipe[];
+
+  @OneToMany(_ => RecipeImage, recipeImage => recipeImage.user)
+  recipeImages: RecipeImage[];
 
   @OneToMany(_ => SelectedRecipe, selectedRecipe => selectedRecipe.user)
   selectedRecipes: SelectedRecipe[];

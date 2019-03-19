@@ -29,7 +29,6 @@ export default class RecipeImageController {
 
         if (!image) throw new NotFoundError("No image found");
 
-
         //Add tranform Cloudinary
         const regExp = new RegExp("/v[0-9]+/");
         image.imageUrl = image.imageUrl.replace(regExp, imageTransformGradient);
