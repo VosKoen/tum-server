@@ -67,7 +67,6 @@ export default class RecipeImageController {
       console.log(error);
       return "An error occurred";
     }
-    console.log(cloudinaryReturn.secure_url);
 
     try {
       const recipe = await Recipe.findOne(id);
@@ -76,6 +75,7 @@ export default class RecipeImageController {
         throw new NotFoundError("Could not find a recipe with this id");
       const recipeImage = {
         recipeId: recipe.id,
+        userId: recipe.userId,
         imageUrl: cloudinaryReturn.secure_url
       };
       return RecipeImage.create(recipeImage).save();
