@@ -4,6 +4,7 @@ import {
   Param,
   UploadedFile,
   Post,
+  Put,
   HttpCode,
   NotFoundError
 } from "routing-controllers";
@@ -13,6 +14,33 @@ import RecipeImage from "./entity";
 import Recipe from "../recipes/entity";
 import * as cloudinary from "cloudinary";
 import { imageFolder, imageTransformGradient } from "../constants";
+
+const uploadNewImage = async file => {
+  let cloudinaryReturn;
+  try {
+    const promise = new Promise((resolve, reject) =>
+      cloudinary.v2.uploader
+        .upload_stream(
+          { resource_type: "image", folder: imageFolder },
+          (error, result) => {
+            if (error) reject(error);
+            resolve(result);
+          }
+        )
+        .end(file.buffer)
+    );
+
+    await promise
+      .then(res => (cloudinaryReturn = res))
+      .catch(err => console.log(err));
+  } catch (error) {
+    console.log(error);
+    return "An error occurred";
+  }
+
+  const imageUrl = cloudinaryReturn.secure_url;
+  return imageUrl;
+};
 
 @JsonController()
 export default class RecipeImageController {
@@ -40,45 +68,74 @@ export default class RecipeImageController {
     }
   }
 
-  @Post("/recipes/:id/images/")
+  @Post("/recipes/:id/own-image")
   @HttpCode(201)
   async addImageToRecipe(
     @Param("id") id: number,
     @UploadedFile("file") file: any
   ) {
-    let cloudinaryReturn;
-    try {
-      const promise = new Promise((resolve, reject) =>
-        cloudinary.v2.uploader
-          .upload_stream(
-            { resource_type: "image", folder: imageFolder },
-            (error, result) => {
-              if (error) reject(error);
-              resolve(result);
-            }
-          )
-          .end(file.buffer)
-      );
-
-      await promise
-        .then(res => (cloudinaryReturn = res))
-        .catch(err => console.log(err));
-    } catch (error) {
-      console.log(error);
-      return "An error occurred";
-    }
+    const imageUrl = await uploadNewImage(file);
 
     try {
       const recipe = await Recipe.findOne(id);
 
       if (!recipe)
         throw new NotFoundError("Could not find a recipe with this id");
-      const recipeImage = {
+
+      const newRecipeImage = {
         recipeId: recipe.id,
         userId: recipe.userId,
-        imageUrl: cloudinaryReturn.secure_url
+        imageUrl
       };
-      return RecipeImage.create(recipeImage).save();
+      const recipeImage = await RecipeImage.create(newRecipeImage).save();
+
+      //update ownRecipeImage on recipe
+      const recipeUpdate = {
+        ownImage: recipeImage
+      };
+
+      return Recipe.merge(recipe, recipeUpdate).save();
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @Put("/recipes/:id/own-image")
+  @HttpCode(201)
+  async changeOwnRecipeImage(
+    @Param("id") id: number,
+    @UploadedFile("file") file: any
+  ) {
+    const imageUrl = await uploadNewImage(file);
+
+    try {
+      const recipe = await Recipe.findOne(id);
+
+      if (!recipe)
+        throw new NotFoundError("Could not find a recipe with this id");
+
+      let oldOwnImage: RecipeImage | undefined;
+      if (recipe.ownImageId) {
+        oldOwnImage = await RecipeImage.findOne(recipe.ownImageId);
+      }
+
+      const newRecipeImage = {
+        recipeId: recipe.id,
+        userId: recipe.userId,
+        imageUrl
+      };
+      const recipeImage = await RecipeImage.create(newRecipeImage).save();
+
+      //update ownRecipeImage on recipe
+      const recipeUpdate = {
+        ownImage: recipeImage
+      };
+
+      const newRecipe = await Recipe.merge(recipe, recipeUpdate).save();
+
+      if (oldOwnImage) await RecipeImage.delete(oldOwnImage);
+
+      return newRecipe
     } catch (error) {
       console.log(error);
     }
