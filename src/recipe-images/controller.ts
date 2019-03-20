@@ -6,7 +6,8 @@ import {
   Post,
   Put,
   HttpCode,
-  NotFoundError
+  NotFoundError,
+  Delete
 } from "routing-controllers";
 
 import { getRepository } from "typeorm";
@@ -35,11 +36,13 @@ const uploadNewImage = async file => {
       .catch(err => console.log(err));
   } catch (error) {
     console.log(error);
-    return "An error occurred";
   }
 
-  const imageUrl = cloudinaryReturn.secure_url;
-  return imageUrl;
+  const response = {
+    imageUrl: cloudinaryReturn.secure_url,
+    publicId: cloudinaryReturn.public_id
+  };
+  return response;
 };
 
 @JsonController()
@@ -74,7 +77,7 @@ export default class RecipeImageController {
     @Param("id") id: number,
     @UploadedFile("file") file: any
   ) {
-    const imageUrl = await uploadNewImage(file);
+    const response = await uploadNewImage(file);
 
     try {
       const recipe = await Recipe.findOne(id);
@@ -85,7 +88,8 @@ export default class RecipeImageController {
       const newRecipeImage = {
         recipeId: recipe.id,
         userId: recipe.userId,
-        imageUrl
+        imageUrl: response.imageUrl,
+        publicId: response.publicId
       };
       const recipeImage = await RecipeImage.create(newRecipeImage).save();
 
@@ -106,7 +110,7 @@ export default class RecipeImageController {
     @Param("id") id: number,
     @UploadedFile("file") file: any
   ) {
-    const imageUrl = await uploadNewImage(file);
+    const response = await uploadNewImage(file);
 
     try {
       const recipe = await Recipe.findOne(id);
@@ -122,8 +126,10 @@ export default class RecipeImageController {
       const newRecipeImage = {
         recipeId: recipe.id,
         userId: recipe.userId,
-        imageUrl
+        imageUrl: response.imageUrl,
+        publicId: response.publicId
       };
+
       const recipeImage = await RecipeImage.create(newRecipeImage).save();
 
       //update ownRecipeImage on recipe
@@ -133,11 +139,49 @@ export default class RecipeImageController {
 
       const newRecipe = await Recipe.merge(recipe, recipeUpdate).save();
 
-      if (oldOwnImage) await RecipeImage.delete(oldOwnImage);
+      if (oldOwnImage) {
+        const publicId = oldOwnImage.publicId;
+        await RecipeImage.delete(oldOwnImage);
 
-      return newRecipe
+        //Already existing images of which I did not save the public ID
+        if (publicId !== "migration")
+          cloudinary.v2.uploader.destroy(publicId, function(error, result) {
+            console.log(result, error);
+          });
+      }
+
+      return newRecipe;
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  @Delete("/recipes/:id/own-image")
+  @HttpCode(204)
+  async deleteOwnImage(@Param("id") id: number) {
+    try {
+      const recipe = await Recipe.findOne(id);
+      if (!recipe)
+        throw new NotFoundError("Could not find a recipe with this id");
+      if (!recipe.ownImageId)
+        throw new NotFoundError(
+          "This recipe does not have an image created by the author"
+        );
+      const oldOwnImage = await RecipeImage.findOne(recipe.ownImageId);
+
+      if (oldOwnImage) {
+        const publicId = oldOwnImage.publicId;
+        const deletedRecipeImage = await RecipeImage.delete(oldOwnImage);
+
+        if (publicId !== "migration")
+          cloudinary.v2.uploader.destroy(publicId, function(error, result) {
+            console.log(result, error);
+          });
+
+        return deletedRecipeImage;
+      }
+    } catch (err) {
+      console.log(err);
     }
   }
 }

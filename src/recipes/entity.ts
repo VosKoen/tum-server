@@ -41,7 +41,7 @@ export default class Recipe extends BaseEntity {
   @Column("int", { nullable: true })
   ownImageId: number;
 
-  @OneToOne(_ => RecipeImage, {nullable: true})
+  @OneToOne(_ => RecipeImage, recipeImage => recipeImage.ownImageRecipe, {nullable: true, onDelete:"SET NULL"})
   @JoinColumn({name: "own_image_id"})
   ownImage: RecipeImage;
 
