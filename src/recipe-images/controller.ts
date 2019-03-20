@@ -45,6 +45,12 @@ const uploadNewImage = async file => {
   return response;
 };
 
+const transformImageUrl = (url: string)=> {
+  const regExp = new RegExp("/v[0-9]+/");
+  const transformedUrl = url.replace(regExp, imageTransformGradient);
+return transformedUrl
+}
+
 @JsonController()
 export default class RecipeImageController {
   @Get("/recipes/:id/images/random")
@@ -61,8 +67,7 @@ export default class RecipeImageController {
         if (!image) throw new NotFoundError("No image found");
 
         //Add tranform Cloudinary
-        const regExp = new RegExp("/v[0-9]+/");
-        image.imageUrl = image.imageUrl.replace(regExp, imageTransformGradient);
+        image.imageUrl = transformImageUrl(image.imageUrl)
 
         return image;
       } catch (error) {
@@ -73,7 +78,7 @@ export default class RecipeImageController {
 
   @Post("/recipes/:id/own-image")
   @HttpCode(201)
-  async addImageToRecipe(
+  async addOwnRecipeImage(
     @Param("id") id: number,
     @UploadedFile("file") file: any
   ) {
@@ -182,6 +187,38 @@ export default class RecipeImageController {
       }
     } catch (err) {
       console.log(err);
+    }
+  }
+
+  @Post("/recipes/:id/images")
+  @HttpCode(201)
+  async addImageToRecipe(
+    @Param("id") id: number,
+    @UploadedFile("file") file: any
+  ) {
+    const response = await uploadNewImage(file);
+
+    try {
+      const recipe = await Recipe.findOne(id);
+
+      if (!recipe)
+        throw new NotFoundError("Could not find a recipe with this id");
+
+      const newRecipeImage = {
+        recipeId: recipe.id,
+        userId: recipe.userId,
+        imageUrl: response.imageUrl,
+        publicId: response.publicId
+      };
+
+      const recipeImage = await RecipeImage.create(newRecipeImage).save();
+       const imageUrl = transformImageUrl(recipeImage.imageUrl)
+
+       console.log(imageUrl)
+       return {imageUrl}
+
+    } catch (error) {
+      console.log(error);
     }
   }
 }
