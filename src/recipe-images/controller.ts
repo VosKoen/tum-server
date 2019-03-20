@@ -16,7 +16,7 @@ import Recipe from "../recipes/entity";
 import * as cloudinary from "cloudinary";
 import { imageFolder, imageTransformGradient } from "../constants";
 
-const uploadNewImage = async file => {
+export const uploadNewImage = async file => {
   let cloudinaryReturn;
   try {
     const promise = new Promise((resolve, reject) =>
@@ -45,34 +45,47 @@ const uploadNewImage = async file => {
   return response;
 };
 
-const transformImageUrl = (url: string)=> {
+export const transformImageUrl = (url: string) => {
   const regExp = new RegExp("/v[0-9]+/");
   const transformedUrl = url.replace(regExp, imageTransformGradient);
-return transformedUrl
-}
+  return transformedUrl;
+};
 
 @JsonController()
 export default class RecipeImageController {
   @Get("/recipes/:id/images/random")
   async getRandomImage(@Param("id") id: number) {
-    {
-      try {
-        const image = await getRepository(RecipeImage)
-          .createQueryBuilder("recipeImage")
-          .where("recipe_id = :id", { id: id })
-          .orderBy("RANDOM()")
-          .limit(1)
-          .getOne();
+    try {
+      const image = await getRepository(RecipeImage)
+        .createQueryBuilder("recipeImage")
+        .where("recipe_id = :id", { id: id })
+        .orderBy("RANDOM()")
+        .limit(1)
+        .getOne();
 
-        if (!image) throw new NotFoundError("No image found");
+      if (!image) throw new NotFoundError("No image found");
 
-        //Add tranform Cloudinary
-        image.imageUrl = transformImageUrl(image.imageUrl)
+      //Add tranform Cloudinary
+      image.imageUrl = transformImageUrl(image.imageUrl);
 
-        return image;
-      } catch (error) {
-        console.log(`An error occured: ${error}`);
-      }
+      return image;
+    } catch (error) {
+      console.log(`An error occured: ${error}`);
+    }
+  }
+
+  @Get("/images/:id")
+  async getImage(@Param("id") id: number) {
+    try {
+      const image = await RecipeImage.findOne(id);
+      if (!image) throw new NotFoundError("No image found");
+
+      //Add tranform Cloudinary
+      image.imageUrl = transformImageUrl(image.imageUrl);
+
+      return image;
+    } catch (error) {
+      console.log(`An error occured: ${error}`);
     }
   }
 
@@ -190,35 +203,5 @@ export default class RecipeImageController {
     }
   }
 
-  @Post("/recipes/:id/images")
-  @HttpCode(201)
-  async addImageToRecipe(
-    @Param("id") id: number,
-    @UploadedFile("file") file: any
-  ) {
-    const response = await uploadNewImage(file);
 
-    try {
-      const recipe = await Recipe.findOne(id);
-
-      if (!recipe)
-        throw new NotFoundError("Could not find a recipe with this id");
-
-      const newRecipeImage = {
-        recipeId: recipe.id,
-        userId: recipe.userId,
-        imageUrl: response.imageUrl,
-        publicId: response.publicId
-      };
-
-      const recipeImage = await RecipeImage.create(newRecipeImage).save();
-       const imageUrl = transformImageUrl(recipeImage.imageUrl)
-
-       console.log(imageUrl)
-       return {imageUrl}
-
-    } catch (error) {
-      console.log(error);
-    }
-  }
 }

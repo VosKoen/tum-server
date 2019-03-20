@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from "typeorm";
 import { BaseEntity } from "typeorm/repository/BaseEntity";
 import Recipe from '../recipes/entity'
 import User from '../users/entity'
@@ -30,8 +30,4 @@ export default class RecipeImage extends BaseEntity {
   @ManyToOne(_ => User, user => user.recipes)
   @JoinColumn({ name: "user_id" })
   user: User;
-
-  @OneToOne(_ => Recipe)
-  ownImageRecipe: Recipe;
-
 }
