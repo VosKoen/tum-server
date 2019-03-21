@@ -6,11 +6,12 @@ import {
   Post,
   HttpCode,
   NotFoundError,
-  UploadedFile
+  UploadedFile,
+  Delete
 } from "routing-controllers";
 import RecipeUserImage from "./entity";
 import RecipeImage from "../recipe-images/entity";
-import Recipe from '../recipes/entity'
+import Recipe from "../recipes/entity";
 import { transformImageUrl, uploadNewImage } from "../recipe-images/controller";
 import * as cloudinary from "cloudinary";
 
@@ -28,16 +29,15 @@ export default class RecipeUserImageController {
       }
     });
 
-    if (recipeUserImage) {
-      const recipeImage = await RecipeImage.findOne(recipeUserImage.imageId);
+    if (!recipeUserImage)
+      throw new NotFoundError("No existing recipe user image found");
 
-      if (!recipeImage) throw new InternalServerError("Something went wrong");
+    const recipeImage = await RecipeImage.findOne(recipeUserImage.imageId);
 
-      const imageUrl = transformImageUrl(recipeImage.imageUrl);
-      return { imageUrl };
-    }
+    if (!recipeImage) throw new InternalServerError("Something went wrong");
 
-    return { imageUrl: null };
+    const imageUrl = transformImageUrl(recipeImage.imageUrl);
+    return { imageUrl };
   }
 
   @Post("/recipes/:id/users/:userId/images")
@@ -81,7 +81,6 @@ export default class RecipeUserImageController {
         };
         RecipeUserImage.create(newRecipeUserImage).save();
       } else {
-        
         //Alter existing entry in RecipeUserImage and destroy old recipeImage
         const oldRecipeImage = await RecipeImage.findOne(
           oldRecipeUserImage.imageId
@@ -111,5 +110,39 @@ export default class RecipeUserImageController {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  @Delete("/recipes/:id/users/:userId/images")
+  @HttpCode(204)
+  async deleteRecipeUserImage(
+    @Param("id") id: number,
+    @Param("userId") userId: number
+  ) {
+    const recipeUserImage = await RecipeUserImage.findOne({
+      where: {
+        userId: userId,
+        recipeId: id
+      }
+    });
+
+    if (!recipeUserImage)
+      throw new NotFoundError(
+        "No recipe user image found on this recipe and user"
+      );
+
+    const recipeImage = await RecipeImage.findOne(recipeUserImage.imageId);
+
+    if (!recipeImage) throw new InternalServerError("Something went wrong");
+
+    const publicId = recipeImage.publicId;
+
+    //Deleting recipe image will also delete recipe user image (cascade)
+    const imageDeleted = await RecipeImage.delete(recipeImage);
+
+    cloudinary.v2.uploader.destroy(publicId, function(error, result) {
+      console.log(result, error);
+    });
+
+    return imageDeleted
   }
 }
