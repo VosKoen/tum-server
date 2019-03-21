@@ -4,7 +4,8 @@ import {
   Column,
   OneToMany,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
+  OneToOne
 } from "typeorm";
 import { BaseEntity } from "typeorm/repository/BaseEntity";
 import Step from "../recipe-steps/entity";
@@ -36,6 +37,13 @@ export default class Recipe extends BaseEntity {
 
   @Column("int", { nullable: true })
   rating: number;
+
+  @Column("int", { nullable: true })
+  ownImageId: number;
+
+  @OneToOne(_ => RecipeImage, {nullable: true, onDelete:"SET NULL"})
+  @JoinColumn({name: "own_image_id"})
+  ownImage: RecipeImage;
 
   @OneToMany(_ => Step, step => step.recipe)
   steps: Step[];
