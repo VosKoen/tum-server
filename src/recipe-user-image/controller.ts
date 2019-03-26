@@ -57,7 +57,7 @@ export default class RecipeUserImageController {
 
       const newRecipeImage = {
         recipeId: recipe.id,
-        userId: recipe.userId,
+        userId: userId,
         imageUrl: response.imageUrl,
         publicId: response.publicId
       };
@@ -76,7 +76,7 @@ export default class RecipeUserImageController {
         //Create new entry in RecipeUserImage
         const newRecipeUserImage = {
           recipeId: recipe.id,
-          userId: recipe.userId,
+          userId: userId,
           image: recipeImage
         };
         RecipeUserImage.create(newRecipeUserImage).save();
