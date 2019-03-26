@@ -37,7 +37,7 @@ export default class RecipeUserImageController {
     if (!recipeImage) throw new InternalServerError("Something went wrong");
 
     const imageUrl = transformImageUrl(recipeImage.imageUrl);
-    return { imageUrl };
+    return { imageUrl, id: recipeImage.id };
   }
 
   @Post("/recipes/:id/users/:userId/images")
@@ -106,7 +106,7 @@ export default class RecipeUserImageController {
 
       const imageUrl = transformImageUrl(recipeImage.imageUrl);
 
-      return { imageUrl };
+      return { imageUrl, id: recipeImage.id };
     } catch (error) {
       console.log(error);
     }

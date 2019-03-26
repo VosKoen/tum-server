@@ -32,7 +32,6 @@ export default class User extends BaseEntity {
   async setPassword(rawPassword: string) {
     const hash = await bcrypt.hash(rawPassword, 8);
     this.password = hash;
-
   }
 
   checkPassword(rawPassword: string): Promise<boolean> {
@@ -51,6 +50,9 @@ export default class User extends BaseEntity {
   @OneToMany(_ => RecipeUserRating, recipeUserRating => recipeUserRating.user)
   recipeUserRatings: RecipeUserRating[];
 
-  @OneToMany(_ => RequestedIngredient, requestedIngredient => requestedIngredient.user)
+  @OneToMany(
+    _ => RequestedIngredient,
+    requestedIngredient => requestedIngredient.user
+  )
   requestedIngredients: RequestedIngredient[];
 }

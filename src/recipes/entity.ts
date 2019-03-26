@@ -41,8 +41,24 @@ export default class Recipe extends BaseEntity {
   @Column("int", { nullable: true })
   ownImageId: number;
 
-  @OneToOne(_ => RecipeImage, {nullable: true, onDelete:"SET NULL"})
-  @JoinColumn({name: "own_image_id"})
+  @Column("int", { nullable: false, default: 0 })
+  reportedCount: number;
+
+  addReportedCount() {
+    this.reportedCount++;
+    this.save();
+  }
+
+  @Column("int", { nullable: false, default: 0 })
+  userChoiceCount: number;
+
+  addUserChoiceCount() {
+    this.userChoiceCount++;
+    this.save();
+  }
+
+  @OneToOne(_ => RecipeImage, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "own_image_id" })
   ownImage: RecipeImage;
 
   @OneToMany(_ => Step, step => step.recipe)

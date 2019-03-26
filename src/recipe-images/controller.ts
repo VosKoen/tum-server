@@ -67,7 +67,7 @@ export default class RecipeImageController {
 
       //Add tranform Cloudinary
       image.imageUrl = transformImageUrl(image.imageUrl);
-
+      console.log(image)
       return image;
     } catch (error) {
       console.log(`An error occured: ${error}`);

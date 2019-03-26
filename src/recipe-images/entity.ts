@@ -23,6 +23,22 @@ export default class RecipeImage extends BaseEntity {
   @Column("int", { nullable: false })
   userId: number;
 
+  @Column("int", { nullable: false, default: 0 })
+  reportedCount: number;
+
+  addReportedCount() {
+    this.reportedCount++;
+    this.save();
+  }
+
+  @Column("int", { nullable: false, default: 0 })
+  userChoiceCount: number;
+
+  addUserChoiceCount() {
+    this.userChoiceCount++;
+    this.save();
+  }
+
   @ManyToOne(_ => Recipe, recipe => recipe.recipeImages,{onDelete:"CASCADE"})
   @JoinColumn({ name: "recipe_id" })
   recipe: Recipe;
