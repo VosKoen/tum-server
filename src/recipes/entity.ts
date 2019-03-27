@@ -50,10 +50,10 @@ export default class Recipe extends BaseEntity {
   }
 
   @Column("int", { nullable: false, default: 0 })
-  userChoiceCount: number;
+  userRandomViews: number;
 
-  addUserChoiceCount() {
-    this.userChoiceCount++;
+  addUserRandomViewsCount() {
+    this.userRandomViews++;
     this.save();
   }
 
