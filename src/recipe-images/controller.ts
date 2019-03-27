@@ -65,9 +65,10 @@ export default class RecipeImageController {
 
       if (!image) throw new NotFoundError("No image found");
 
+      image.addUserRandomViewsCount();
+
       //Add tranform Cloudinary
       image.imageUrl = transformImageUrl(image.imageUrl);
-
       return image;
     } catch (error) {
       console.log(`An error occured: ${error}`);
@@ -202,6 +203,4 @@ export default class RecipeImageController {
       console.log(err);
     }
   }
-
-
 }

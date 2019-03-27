@@ -88,20 +88,25 @@ export default class RecipeController {
   // Function to retrieve a random recipe with all relevant details from the database
   @Get("/random-recipe")
   async getRandomRecipe(@QueryParams() queryInput: Filters) {
-
     try {
-
-      const query = getRepository(Recipe).createQueryBuilder("recipe")
+      const query = getRepository(Recipe).createQueryBuilder("recipe");
 
       //Filter on preparation time
-      if(queryInput.preparationTime) query.andWhere('recipe.timeNeeded <= :preparationTime', {preparationTime: queryInput.preparationTime})
+      if (queryInput.preparationTime)
+        query.andWhere("recipe.timeNeeded <= :preparationTime", {
+          preparationTime: queryInput.preparationTime
+        });
 
       // Get a random recipe from the database
-      const recipe: any = await query
+      const recipe : any = await query
         .orderBy("RANDOM()")
         .limit(1)
         .getOne();
-    
+
+        if(!recipe) throw new NotFoundError('No recipe found')
+
+      recipe.addUserRandomViewsCount();
+
       //Get all relevant recipe information
       const completeRecipe = await getCompleteRecipe(recipe.id);
       return completeRecipe;
@@ -128,25 +133,23 @@ export default class RecipeController {
     @Param("id") id: number,
     @QueryParams() pagination: Pagination
   ) {
-    
-      try {
-        const recipes = await Recipe.findAndCount({
-          where: {
-            userId: id
-          },
-          skip: pagination.offset,
-          take: pagination.limit,
-          order: {
-            id: "DESC"
-          }
-        });
+    try {
+      const recipes = await Recipe.findAndCount({
+        where: {
+          userId: id
+        },
+        skip: pagination.offset,
+        take: pagination.limit,
+        order: {
+          id: "DESC"
+        }
+      });
 
-        return recipes;
-      } catch (error) {
-        console.log(`An error occured: ${error}`);
-        throw new InternalServerError("Something went wrong");
-      }
-    
+      return recipes;
+    } catch (error) {
+      console.log(`An error occured: ${error}`);
+      throw new InternalServerError("Something went wrong");
+    }
   }
 
   @Post("/recipes")
