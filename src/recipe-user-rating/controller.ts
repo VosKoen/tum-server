@@ -7,7 +7,9 @@ import {
   NotFoundError,
   ForbiddenError,
   Get,
-  Authorized
+  Authorized,
+  UnauthorizedError,
+  CurrentUser
 } from "routing-controllers";
 import Recipe from "../recipes/entity";
 import User from "../users/entity";
@@ -19,8 +21,12 @@ export default class RecipeUserRatingController {
   @Authorized()
   async getUserRecipes(
     @Param("userId") userId: number,
-    @Param("recipeId") recipeId: number
+    @Param("recipeId") recipeId: number,
+    @CurrentUser() user: User
   ) {
+    if (userId !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
     const recipeUserRating = await RecipeUserRating.findOne({
       where: {
         recipeId,
@@ -28,13 +34,16 @@ export default class RecipeUserRatingController {
       }
     });
 
-    const recipe = await Recipe.findOne(recipeId)
-    if(!recipe) throw new NotFoundError(`No recipe found with id ${recipeId}`)
+    const recipe = await Recipe.findOne(recipeId);
+    if (!recipe) throw new NotFoundError(`No recipe found with id ${recipeId}`);
 
-    if(recipeUserRating) return {recipeIsLiked: recipeUserRating.recipeIsLiked, newRating: recipe.rating}
+    if (recipeUserRating)
+      return {
+        recipeIsLiked: recipeUserRating.recipeIsLiked,
+        newRating: recipe.rating
+      };
 
-    return {recipeIsLiked: null, newRating: recipe.rating}
-
+    return { recipeIsLiked: null, newRating: recipe.rating };
   }
 
   @Post("/recipes/:recipeId/users/:userId/ratings")
@@ -43,8 +52,12 @@ export default class RecipeUserRatingController {
   async setRecipeUserRating(
     @Param("userId") userId: number,
     @Param("recipeId") recipeId: number,
-    @Body() body: { recipeIsLiked: boolean }
+    @Body() body: { recipeIsLiked: boolean },
+    @CurrentUser() user: User
   ) {
+    if (userId !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
     const recipeUserRating = await RecipeUserRating.findOne({
       where: {
         recipeId,
@@ -52,12 +65,9 @@ export default class RecipeUserRatingController {
       }
     });
     const recipe = await Recipe.findOne(recipeId);
-    const user = await User.findOne(userId);
 
     if (!recipe)
       throw new NotFoundError("Could not find a recipe with this id");
-
-    if (!user) throw new NotFoundError("Could not find a user with this id");
 
     const oldRating = recipe.rating ? recipe.rating : 0;
 

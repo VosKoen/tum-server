@@ -8,13 +8,16 @@ import {
   NotFoundError,
   UploadedFile,
   Delete,
-  Authorized
+  Authorized,
+  UnauthorizedError,
+  CurrentUser
 } from "routing-controllers";
 import RecipeUserImage from "./entity";
 import RecipeImage from "../recipe-images/entity";
 import Recipe from "../recipes/entity";
 import { transformImageUrl, uploadNewImage } from "../recipe-images/controller";
 import * as cloudinary from "cloudinary";
+import User from "../users/entity";
 
 @JsonController()
 export default class RecipeUserImageController {
@@ -48,8 +51,12 @@ export default class RecipeUserImageController {
   async addImageToRecipe(
     @Param("id") id: number,
     @Param("userId") userId: number,
-    @UploadedFile("file") file: any
+    @UploadedFile("file") file: any,
+    @CurrentUser() user: User
   ) {
+    if (userId !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
     const response = await uploadNewImage(file);
 
     try {
@@ -120,8 +127,12 @@ export default class RecipeUserImageController {
   @Authorized()
   async deleteRecipeUserImage(
     @Param("id") id: number,
-    @Param("userId") userId: number
+    @Param("userId") userId: number,
+    @CurrentUser() user: User
   ) {
+    if (userId !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
     const recipeUserImage = await RecipeUserImage.findOne({
       where: {
         userId: userId,
@@ -147,6 +158,6 @@ export default class RecipeUserImageController {
       console.log(result, error);
     });
 
-    return imageDeleted
+    return imageDeleted;
   }
 }

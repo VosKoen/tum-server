@@ -5,11 +5,14 @@ import {
   Param,
   Body,
   NotFoundError,
-  Authorized
+  Authorized,
+  UnauthorizedError,
+  CurrentUser
 } from "routing-controllers";
 import RecipeIngredient from "./entity";
 import Recipe from "../recipes/entity";
 import Ingredient from "../ingredients/entity";
+import User from '../users/entity'
 
 @JsonController()
 export default class RecipeIngredientController {
@@ -19,19 +22,22 @@ export default class RecipeIngredientController {
   async createRecipeIngredient(
     @Param("recipeId") recipeId: number,
     @Param("ingredientId") ingredientId: number,
-    @Body() recipeIngredientBody: Partial<RecipeIngredient>
+    @Body() recipeIngredientBody: Partial<RecipeIngredient>,
+    @CurrentUser() user: User
   ) {
     const recipe = await Recipe.findOne(recipeId);
     const ingredient = await Ingredient.findOne(ingredientId);
 
     if (!recipe)
       throw new NotFoundError("Could not find a recipe with this id");
+    if (recipe.userId !== user.id)
+      throw new UnauthorizedError("The recipe does not belong to the user");
 
     if (!ingredient)
       throw new NotFoundError("Could not find an ingredient with this id");
 
     const recipeIngredient = { recipe, ingredient, ...recipeIngredientBody };
-    
+
     const newRecipeIngredient = RecipeIngredient.create(recipeIngredient);
     return newRecipeIngredient.save();
   }

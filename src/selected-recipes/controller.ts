@@ -5,7 +5,10 @@ import {
   HttpCode,
   Get,
   QueryParams,
-  Authorized
+  Authorized,
+  CurrentUser,
+  UnauthorizedError,
+  NotFoundError
 } from "routing-controllers";
 import User from "../users/entity";
 import Recipe from "../recipes/entity";
@@ -28,10 +31,14 @@ export default class SelectedRecipeController {
   @Authorized()
   async createRecipeSelected(
     @Param("userId") userId: number,
-    @Param("recipeId") recipeId: number
+    @Param("recipeId") recipeId: number,
+    @CurrentUser() user: User
   ) {
+    if (user.id !== userId)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
     const recipe = await Recipe.findOne(recipeId);
-    const user = await User.findOne(userId);
+    if(!recipe) throw new NotFoundError("Recipe not found")
 
     const selectedTimestamp = new Date().getTime();
 
@@ -46,8 +53,11 @@ export default class SelectedRecipeController {
   @Authorized()
   async getRecipeHistory(
     @Param("userId") userId: number,
-    @QueryParams() pagination: Pagination
+    @QueryParams() pagination: Pagination,
+    @CurrentUser() user: User
   ) {
+    if (user.id !== userId)
+    throw new UnauthorizedError("No authorization for the provided user id");
     try {
       const history = await getRepository(SelectedRecipe)
         .createQueryBuilder("selectedRecipe")

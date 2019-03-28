@@ -10,7 +10,9 @@ import {
   InternalServerError,
   Put,
   QueryParams,
-  Authorized
+  Authorized,
+  CurrentUser,
+  UnauthorizedError
 } from "routing-controllers";
 import { getRepository, getConnection } from "typeorm";
 import Recipe from "./entity";
@@ -18,6 +20,7 @@ import Ingredient from "../ingredients/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
+import User from "../users/entity";
 
 interface RecipeIngredientWithDetails {
   ingredientId: number;
@@ -100,12 +103,12 @@ export default class RecipeController {
         });
 
       // Get a random recipe from the database
-      const recipe : any = await query
+      const recipe: any = await query
         .orderBy("RANDOM()")
         .limit(1)
         .getOne();
 
-        if(!recipe) throw new NotFoundError('No recipe found')
+      if (!recipe) throw new NotFoundError("No recipe found");
 
       recipe.addUserRandomViewsCount();
 
@@ -159,8 +162,8 @@ export default class RecipeController {
   @Post("/recipes")
   @Authorized()
   @HttpCode(201)
-  async createRecipe(@Body() recipe: Recipe) {
-    const newRecipe = Recipe.create(recipe);
+  async createRecipe(@Body() recipe: Recipe, @CurrentUser() user: User) {
+    const newRecipe = Recipe.create({ ...recipe, userId: user.id });
     return newRecipe.save();
   }
 
@@ -168,10 +171,15 @@ export default class RecipeController {
   @Authorized()
   async changeExistingRecipe(
     @Param("id") id: number,
-    @Body() update: Partial<Recipe>
+    @Body() update: Partial<Recipe>,
+    @CurrentUser() user: User
   ) {
     const recipe = await Recipe.findOne(id);
     if (!recipe) throw new NotFoundError("Could not find recipe");
+    if (recipe.userId !== user.id)
+      throw new UnauthorizedError(
+        "This recipe does not belong to the authenticated user"
+      );
 
     let isRatingResetRequired = false;
     //Steps
@@ -313,9 +321,14 @@ export default class RecipeController {
   @Delete("/recipes/:id")
   @Authorized()
   @HttpCode(204)
-  async deleteRecipe(@Param("id") id: number) {
+  async deleteRecipe(@Param("id") id: number, @CurrentUser() user: User) {
     const recipe = await Recipe.findOne(id);
     if (!recipe) throw new NotFoundError("Could not find recipe");
+    if (recipe.userId !== user.id)
+      throw new UnauthorizedError(
+        "This recipe does not belong to the authenticated user"
+      );
+
     return Recipe.delete(recipe);
   }
 }
