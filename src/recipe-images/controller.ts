@@ -7,7 +7,8 @@ import {
   Put,
   HttpCode,
   NotFoundError,
-  Delete
+  Delete,
+  Authorized
 } from "routing-controllers";
 
 import { getRepository } from "typeorm";
@@ -54,6 +55,7 @@ export const transformImageUrl = (url: string) => {
 @JsonController()
 export default class RecipeImageController {
   @Get("/recipes/:id/images/random")
+  @Authorized()
   async getRandomImage(@Param("id") id: number) {
     try {
       const image = await getRepository(RecipeImage)
@@ -76,6 +78,7 @@ export default class RecipeImageController {
   }
 
   @Get("/images/:id")
+  @Authorized()
   async getImage(@Param("id") id: number) {
     try {
       const image = await RecipeImage.findOne(id);
@@ -91,6 +94,7 @@ export default class RecipeImageController {
   }
 
   @Post("/recipes/:id/own-image")
+  @Authorized()
   @HttpCode(201)
   async addOwnRecipeImage(
     @Param("id") id: number,
@@ -124,6 +128,7 @@ export default class RecipeImageController {
   }
 
   @Put("/recipes/:id/own-image")
+  @Authorized()
   @HttpCode(201)
   async changeOwnRecipeImage(
     @Param("id") id: number,
@@ -176,6 +181,7 @@ export default class RecipeImageController {
   }
 
   @Delete("/recipes/:id/own-image")
+  @Authorized()
   @HttpCode(204)
   async deleteOwnImage(@Param("id") id: number) {
     try {

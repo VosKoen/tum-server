@@ -7,7 +7,8 @@ import {
   Get,
   Param,
   NotFoundError,
-  BadRequestError
+  BadRequestError,
+  Authorized
 } from "routing-controllers";
 import User from "./entity";
 
@@ -49,6 +50,7 @@ export default class UserController {
 
   @Put("/users/:id/new-password")
   async changePassword(
+    @Authorized()
     @Param("id") id: number,
     @Body() passwords: PasswordChange
   ) {

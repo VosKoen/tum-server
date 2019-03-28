@@ -9,7 +9,8 @@ import {
   NotFoundError,
   InternalServerError,
   Put,
-  QueryParams
+  QueryParams,
+  Authorized
 } from "routing-controllers";
 import { getRepository, getConnection } from "typeorm";
 import Recipe from "./entity";
@@ -87,6 +88,7 @@ const getCompleteRecipe = async (recipeId: number) => {
 export default class RecipeController {
   // Function to retrieve a random recipe with all relevant details from the database
   @Get("/random-recipe")
+  @Authorized()
   async getRandomRecipe(@QueryParams() queryInput: Filters) {
     try {
       const query = getRepository(Recipe).createQueryBuilder("recipe");
@@ -117,6 +119,7 @@ export default class RecipeController {
   }
 
   @Get("/recipes/:id")
+  @Authorized()
   async getRecipeById(@Param("id") id: number) {
     try {
       const completeRecipe = await getCompleteRecipe(id);
@@ -129,6 +132,7 @@ export default class RecipeController {
 
   // Function to get all recipes created by a specific user
   @Get("/users/:id/recipes")
+  @Authorized()
   async getUserRecipes(
     @Param("id") id: number,
     @QueryParams() pagination: Pagination
@@ -153,6 +157,7 @@ export default class RecipeController {
   }
 
   @Post("/recipes")
+  @Authorized()
   @HttpCode(201)
   async createRecipe(@Body() recipe: Recipe) {
     const newRecipe = Recipe.create(recipe);
@@ -160,6 +165,7 @@ export default class RecipeController {
   }
 
   @Put("/recipes/:id")
+  @Authorized()
   async changeExistingRecipe(
     @Param("id") id: number,
     @Body() update: Partial<Recipe>
@@ -305,6 +311,7 @@ export default class RecipeController {
   }
 
   @Delete("/recipes/:id")
+  @Authorized()
   @HttpCode(204)
   async deleteRecipe(@Param("id") id: number) {
     const recipe = await Recipe.findOne(id);

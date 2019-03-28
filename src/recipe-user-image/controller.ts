@@ -7,7 +7,8 @@ import {
   HttpCode,
   NotFoundError,
   UploadedFile,
-  Delete
+  Delete,
+  Authorized
 } from "routing-controllers";
 import RecipeUserImage from "./entity";
 import RecipeImage from "../recipe-images/entity";
@@ -18,6 +19,7 @@ import * as cloudinary from "cloudinary";
 @JsonController()
 export default class RecipeUserImageController {
   @Get("/recipes/:recipeId/users/:userId/images")
+  @Authorized()
   async getUserRecipeImages(
     @Param("userId") userId: number,
     @Param("recipeId") recipeId: number
@@ -42,6 +44,7 @@ export default class RecipeUserImageController {
 
   @Post("/recipes/:id/users/:userId/images")
   @HttpCode(201)
+  @Authorized()
   async addImageToRecipe(
     @Param("id") id: number,
     @Param("userId") userId: number,
@@ -114,6 +117,7 @@ export default class RecipeUserImageController {
 
   @Delete("/recipes/:id/users/:userId/images")
   @HttpCode(204)
+  @Authorized()
   async deleteRecipeUserImage(
     @Param("id") id: number,
     @Param("userId") userId: number

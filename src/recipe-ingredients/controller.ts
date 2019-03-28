@@ -4,7 +4,8 @@ import {
   HttpCode,
   Param,
   Body,
-  NotFoundError
+  NotFoundError,
+  Authorized
 } from "routing-controllers";
 import RecipeIngredient from "./entity";
 import Recipe from "../recipes/entity";
@@ -13,6 +14,7 @@ import Ingredient from "../ingredients/entity";
 @JsonController()
 export default class RecipeIngredientController {
   @Post("/recipes/:recipeId/ingredients/:ingredientId")
+  @Authorized()
   @HttpCode(201)
   async createRecipeIngredient(
     @Param("recipeId") recipeId: number,

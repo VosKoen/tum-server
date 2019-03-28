@@ -6,7 +6,8 @@ import {
   Param,
   NotFoundError,
   ForbiddenError,
-  Get
+  Get,
+  Authorized
 } from "routing-controllers";
 import Recipe from "../recipes/entity";
 import User from "../users/entity";
@@ -15,6 +16,7 @@ import RecipeUserRating from "./entity";
 @JsonController()
 export default class RecipeUserRatingController {
   @Get("/recipes/:recipeId/users/:userId/ratings")
+  @Authorized()
   async getUserRecipes(
     @Param("userId") userId: number,
     @Param("recipeId") recipeId: number
@@ -36,6 +38,7 @@ export default class RecipeUserRatingController {
   }
 
   @Post("/recipes/:recipeId/users/:userId/ratings")
+  @Authorized()
   @HttpCode(201)
   async setRecipeUserRating(
     @Param("userId") userId: number,
