@@ -1,6 +1,9 @@
 import "reflect-metadata";
-import { createKoaServer } from "routing-controllers";
+import { Action, createKoaServer, BadRequestError } from "routing-controllers";
+import { verify } from "./jwt";
 import setupDb from "./db";
+import User from "./users/entity";
+
 import RecipeController from "./recipes/controller";
 import RecipeStepController from "./recipe-steps/controller";
 import RecipeIngredientController from "./recipe-ingredients/controller";
@@ -33,7 +36,33 @@ export const app = createKoaServer({
     RequestedIngredientController,
     RecipeUserImageController,
     ReportsController
-  ]
+  ],
+  authorizationChecker: (action: Action) => {
+    const header: string = action.request.headers.authorization;
+    if (header && header.startsWith("Bearer ")) {
+      const [, token] = header.split(" ");
+
+      try {
+        return !!(token && verify(token));
+      } catch (e) {
+        throw new BadRequestError(e);
+      }
+    }
+
+    return false;
+  },
+  currentUserChecker: async (action: Action) => {
+    const header: string = action.request.headers.authorization;
+    if (header && header.startsWith("Bearer ")) {
+      const [, token] = header.split(" ");
+
+      if (token) {
+        const { id } = verify(token);
+        return User.findOne(id);
+      }
+    }
+    return undefined;
+  }
 });
 
 export const server = () =>

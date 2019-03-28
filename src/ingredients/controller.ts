@@ -1,9 +1,10 @@
-import { JsonController, Get } from "routing-controllers";
+import { JsonController, Get, Authorized } from "routing-controllers";
 import Ingredient from "./entity";
 
 @JsonController()
 export default class IngredientController {
   @Get("/ingredients")
+  @Authorized()
   getListOfIngredients() {
     {
       try {

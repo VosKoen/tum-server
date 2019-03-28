@@ -7,7 +7,10 @@ import {
   Put,
   HttpCode,
   NotFoundError,
-  Delete
+  Delete,
+  Authorized,
+  CurrentUser,
+  UnauthorizedError
 } from "routing-controllers";
 
 import { getRepository } from "typeorm";
@@ -15,6 +18,7 @@ import RecipeImage from "./entity";
 import Recipe from "../recipes/entity";
 import * as cloudinary from "cloudinary";
 import { imageFolder, imageTransformGradient } from "../constants";
+import User from "../users/entity";
 
 export const uploadNewImage = async file => {
   let cloudinaryReturn;
@@ -54,6 +58,7 @@ export const transformImageUrl = (url: string) => {
 @JsonController()
 export default class RecipeImageController {
   @Get("/recipes/:id/images/random")
+  @Authorized()
   async getRandomImage(@Param("id") id: number) {
     try {
       const image = await getRepository(RecipeImage)
@@ -76,6 +81,7 @@ export default class RecipeImageController {
   }
 
   @Get("/images/:id")
+  @Authorized()
   async getImage(@Param("id") id: number) {
     try {
       const image = await RecipeImage.findOne(id);
@@ -91,10 +97,12 @@ export default class RecipeImageController {
   }
 
   @Post("/recipes/:id/own-image")
+  @Authorized()
   @HttpCode(201)
   async addOwnRecipeImage(
     @Param("id") id: number,
-    @UploadedFile("file") file: any
+    @UploadedFile("file") file: any,
+    @CurrentUser() user: User
   ) {
     const response = await uploadNewImage(file);
 
@@ -103,6 +111,8 @@ export default class RecipeImageController {
 
       if (!recipe)
         throw new NotFoundError("Could not find a recipe with this id");
+      if (recipe.userId !== user.id)
+        throw new UnauthorizedError("The recipe does not belong to the user");
 
       const newRecipeImage = {
         recipeId: recipe.id,
@@ -124,10 +134,12 @@ export default class RecipeImageController {
   }
 
   @Put("/recipes/:id/own-image")
+  @Authorized()
   @HttpCode(201)
   async changeOwnRecipeImage(
     @Param("id") id: number,
-    @UploadedFile("file") file: any
+    @UploadedFile("file") file: any,
+    @CurrentUser() user: User
   ) {
     const response = await uploadNewImage(file);
 
@@ -136,6 +148,9 @@ export default class RecipeImageController {
 
       if (!recipe)
         throw new NotFoundError("Could not find a recipe with this id");
+
+      if (recipe.userId !== user.id)
+        throw new UnauthorizedError("The recipe does not belong to the user");
 
       let oldOwnImage: RecipeImage | undefined;
       if (recipe.ownImageId) {
@@ -176,12 +191,15 @@ export default class RecipeImageController {
   }
 
   @Delete("/recipes/:id/own-image")
+  @Authorized()
   @HttpCode(204)
-  async deleteOwnImage(@Param("id") id: number) {
+  async deleteOwnImage(@Param("id") id: number, @CurrentUser() user: User) {
     try {
       const recipe = await Recipe.findOne(id);
       if (!recipe)
         throw new NotFoundError("Could not find a recipe with this id");
+      if (recipe.userId !== user.id)
+        throw new UnauthorizedError("The recipe does not belong to the user");
       if (!recipe.ownImageId)
         throw new NotFoundError(
           "This recipe does not have an image created by the author"

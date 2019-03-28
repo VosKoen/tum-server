@@ -7,7 +7,10 @@ import {
   Get,
   Param,
   NotFoundError,
-  BadRequestError
+  BadRequestError,
+  Authorized,
+  CurrentUser,
+  UnauthorizedError
 } from "routing-controllers";
 import User from "./entity";
 
@@ -49,22 +52,27 @@ export default class UserController {
 
   @Put("/users/:id/new-password")
   async changePassword(
-    @Param("id") id: number,
-    @Body() passwords: PasswordChange
+    @Authorized()
+    @Param("id")
+    id: number,
+    @Body() passwords: PasswordChange,
+    @CurrentUser() user: User
   ) {
-    const user = await User.findOne(id);
+    if (id !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
 
-    if (!user) throw new NotFoundError("User not found");
     if (!(await user.checkPassword(passwords.password)))
       throw new ForbiddenError("Current password is incorrect");
     if (passwords.newPassword.length < 8)
-      throw new BadRequestError("New password must be at least 8 characters long");
+      throw new BadRequestError(
+        "New password must be at least 8 characters long"
+      );
 
-      user
+    user;
 
     try {
-      await user.setPassword(passwords.newPassword)
-      await user.save()
+      await user.setPassword(passwords.newPassword);
+      await user.save();
     } catch (e) {
       console.log(e);
     }
