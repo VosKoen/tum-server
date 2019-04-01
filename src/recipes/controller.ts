@@ -78,9 +78,13 @@ const getCompleteRecipe = async (recipeId: number) => {
     // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
     const ingredients = await getIngredientDetails(completeRecipe);
 
-    if (completeRecipe) delete completeRecipe.recipeIngredients;
+    delete completeRecipe.recipeIngredients;
 
-    return { ...completeRecipe, ingredients };
+    //Retrieve userdetails
+    const user = await User.findOne(completeRecipe.userId)
+    if (!user) throw new InternalServerError('Empty user reference')    
+
+    return { ...completeRecipe, ingredients, username: user.username };
   } catch (e) {
     console.log(e);
     throw new InternalServerError("Something went wrong");
