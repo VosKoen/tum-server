@@ -100,6 +100,5 @@ export default class UserController {
     } catch (e) {
       console.log(e);
     }
-
   }
 }
