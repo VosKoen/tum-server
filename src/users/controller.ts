@@ -29,7 +29,10 @@ export default class UserController {
       where: { email: email.toLowerCase() }
     });
     if (existingUser)
-      throw new ForbiddenError("User with this username already exists");
+      throw new ForbiddenError("User with this email already exists");
+
+    //If no username is provided, it is set to the local part of the email address
+    if (!rest.username) rest.username = email.split("@")[0];
 
     const entity = User.create({ ...rest, email: email.toLowerCase() });
     await entity.setPassword(password);
@@ -68,8 +71,6 @@ export default class UserController {
         "New password must be at least 8 characters long"
       );
 
-    user;
-
     try {
       await user.setPassword(passwords.newPassword);
       await user.save();
@@ -78,5 +79,26 @@ export default class UserController {
     }
 
     return {};
+  }
+
+  @Put("/users/:id")
+  async changeUser(
+    @Authorized()
+    @Param("id")
+    id: number,
+    @Body() update: any,
+    @CurrentUser() user: User
+  ) {
+    if (id !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
+    try {
+      const {password, email, ...updateToMerge} = update
+
+      return User.merge(user, updateToMerge).save()
+
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
