@@ -7,6 +7,7 @@ export default class IngredientController {
   @Authorized()
   getListOfIngredients() {
     {
+
       try {
         return Ingredient.find();
       } catch (error) {
