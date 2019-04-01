@@ -38,6 +38,9 @@ export default class User extends BaseEntity {
     return bcrypt.compare(rawPassword, this.password);
   }
 
+  @Column("text", { nullable: false })
+  username: string;
+
   @OneToMany(_ => Recipe, recipe => recipe.user)
   recipes: Recipe[];
 
