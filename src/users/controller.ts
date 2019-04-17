@@ -43,7 +43,7 @@ export default class UserController {
     //If no username is provided, it is set to the local part of the email address
     if (!rest.username) rest.username = email.split("@")[0];
 
-    const entity = User.create({ ...rest, email: email.toLowerCase() });
+    const entity = User.create({ ...rest, email: email.toLowerCase(), isAdmin: false });
     await entity.setPassword(password);
 
     const user = await entity.save();
@@ -57,7 +57,7 @@ export default class UserController {
 
     if (!user) throw new NotFoundError("User not found");
 
-    const { password, ...rest } = user;
+    const { password, isAdmin, ...rest } = user;
 
     return rest;
   }
@@ -91,28 +91,33 @@ export default class UserController {
   }
 
   @Put("/users/:id/reset-password")
-  async resetPassword(
+  async resetPasswordAsAdmin(
     @Authorized()
     @Param("id")
     id: number,
     @CurrentUser() user: User
   ) {
-    if (id !== user.id)
-      throw new UnauthorizedError("No authorization for the provided user id");
 
+    //Check if the current user is administrator
+    if (!user.isAdmin)
+      throw new UnauthorizedError("You are not authorized for this action");
+
+    //Find the user whose password is to be reset
+    const targetUser = await User.findOne(id)
+    if(!targetUser)
+    throw new NotFoundError("User not found")
 
     try {
       const newPassword = createRandomPassword()
 
-      await user.setPassword(newPassword);
-      await user.save();
+      await targetUser.setPassword(newPassword);
+      await targetUser.save();
 
       return {newPassword}
     } catch (e) {
       console.log(e);
       throw new InternalServerError('Something went wrong resetting the password')
     }
-    
   }
 
   @Put("/users/:id")
@@ -127,7 +132,7 @@ export default class UserController {
       throw new UnauthorizedError("No authorization for the provided user id");
 
     try {
-      const {password, email, ...updateToMerge} = update
+      const {password, email, isAdmin, ...updateToMerge} = update
 
       return User.merge(user, updateToMerge).save()
 
