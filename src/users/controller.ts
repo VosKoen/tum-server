@@ -10,9 +10,18 @@ import {
   BadRequestError,
   Authorized,
   CurrentUser,
-  UnauthorizedError
+  UnauthorizedError,
+  InternalServerError
 } from "routing-controllers";
 import User from "./entity";
+
+function createRandomPassword () {
+const passwordCharacters = `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+,-./:;<=>?@[\]^_{|}~`;
+const passwordLength = 10;
+const randomPassword = Array(passwordLength).fill(passwordCharacters).map(x => { return x[Math.floor(Math.random() * x.length)] }).join('');
+
+return randomPassword
+}
 
 interface PasswordChange {
   password: string;
@@ -79,6 +88,31 @@ export default class UserController {
     }
 
     return {};
+  }
+
+  @Put("/users/:id/reset-password")
+  async resetPassword(
+    @Authorized()
+    @Param("id")
+    id: number,
+    @CurrentUser() user: User
+  ) {
+    if (id !== user.id)
+      throw new UnauthorizedError("No authorization for the provided user id");
+
+
+    try {
+      const newPassword = createRandomPassword()
+
+      await user.setPassword(newPassword);
+      await user.save();
+
+      return {newPassword}
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerError('Something went wrong resetting the password')
+    }
+    
   }
 
   @Put("/users/:id")
