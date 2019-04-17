@@ -10,9 +10,18 @@ import {
   BadRequestError,
   Authorized,
   CurrentUser,
-  UnauthorizedError
+  UnauthorizedError,
+  InternalServerError
 } from "routing-controllers";
 import User from "./entity";
+
+function createRandomPassword () {
+const passwordCharacters = `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+,-./:;<=>?@[\]^_{|}~`;
+const passwordLength = 10;
+const randomPassword = Array(passwordLength).fill(passwordCharacters).map(x => { return x[Math.floor(Math.random() * x.length)] }).join('');
+
+return randomPassword
+}
 
 interface PasswordChange {
   password: string;
@@ -34,7 +43,7 @@ export default class UserController {
     //If no username is provided, it is set to the local part of the email address
     if (!rest.username) rest.username = email.split("@")[0];
 
-    const entity = User.create({ ...rest, email: email.toLowerCase() });
+    const entity = User.create({ ...rest, email: email.toLowerCase(), isAdmin: false });
     await entity.setPassword(password);
 
     const user = await entity.save();
@@ -48,7 +57,7 @@ export default class UserController {
 
     if (!user) throw new NotFoundError("User not found");
 
-    const { password, ...rest } = user;
+    const { password, isAdmin, ...rest } = user;
 
     return rest;
   }
@@ -81,6 +90,36 @@ export default class UserController {
     return {};
   }
 
+  @Put("/users/:id/reset-password")
+  async resetPasswordAsAdmin(
+    @Authorized()
+    @Param("id")
+    id: number,
+    @CurrentUser() user: User
+  ) {
+
+    //Check if the current user is administrator
+    if (!user.isAdmin)
+      throw new UnauthorizedError("You are not authorized for this action");
+
+    //Find the user whose password is to be reset
+    const targetUser = await User.findOne(id)
+    if(!targetUser)
+    throw new NotFoundError("User not found")
+
+    try {
+      const newPassword = createRandomPassword()
+
+      await targetUser.setPassword(newPassword);
+      await targetUser.save();
+
+      return {newPassword}
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerError('Something went wrong resetting the password')
+    }
+  }
+
   @Put("/users/:id")
   async changeUser(
     @Authorized()
@@ -93,7 +132,7 @@ export default class UserController {
       throw new UnauthorizedError("No authorization for the provided user id");
 
     try {
-      const {password, email, ...updateToMerge} = update
+      const {password, email, isAdmin, ...updateToMerge} = update
 
       return User.merge(user, updateToMerge).save()
 

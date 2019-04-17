@@ -3,7 +3,6 @@ import { Action, createKoaServer, BadRequestError } from "routing-controllers";
 import { verify } from "./jwt";
 import setupDb from "./db";
 import User from "./users/entity";
-
 import RecipeController from "./recipes/controller";
 import RecipeStepController from "./recipe-steps/controller";
 import RecipeIngredientController from "./recipe-ingredients/controller";
