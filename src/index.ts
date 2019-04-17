@@ -3,10 +3,6 @@ import { Action, createKoaServer, BadRequestError } from "routing-controllers";
 import { verify } from "./jwt";
 import setupDb from "./db";
 import User from "./users/entity";
-
-import sslify from "koa-sslify";
-import { xForwardedProtoResolver } from "koa-sslify";
-
 import RecipeController from "./recipes/controller";
 import RecipeStepController from "./recipe-steps/controller";
 import RecipeIngredientController from "./recipe-ingredients/controller";
@@ -67,8 +63,6 @@ export const app = createKoaServer({
     return undefined;
   }
 });
-
-app.use(sslify({ resolver: xForwardedProtoResolver }));
 
 export const server = () =>
   setupDb()
