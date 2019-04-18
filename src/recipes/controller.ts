@@ -84,7 +84,14 @@ const getCompleteRecipe = async (recipeId: number) => {
     const user = await User.findOne(completeRecipe.userId)
     if (!user) throw new InternalServerError('Empty user reference')    
 
+    //If username is to be hidden, do not return it
+    if(user.hideUsername)
+    return { ...completeRecipe, ingredients, username: "" };
+
+    //Else return including username
     return { ...completeRecipe, ingredients, username: user.username };
+
+
   } catch (e) {
     console.log(e);
     throw new InternalServerError("Something went wrong");
