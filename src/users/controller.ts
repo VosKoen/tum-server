@@ -67,7 +67,6 @@ export default class UserController {
     if (!user) throw new NotFoundError("User not found");
 
     const { password, isAdmin, ...rest } = user;
-
     return rest;
   }
 
