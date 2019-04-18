@@ -22,7 +22,7 @@ export default class LoginController {
     if (!user || !user.id || !await user.checkPassword(password)) throw new BadRequestError('The combination of email address and password is not valid')
 
     const jwt = sign({ id: user.id })
-    console.log(jwt)
+
     return { jwt }
   }
 }
