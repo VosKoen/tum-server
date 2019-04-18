@@ -41,6 +41,9 @@ export default class User extends BaseEntity {
   @Column("text", { nullable: false })
   username: string;
 
+  @Column("boolean", { nullable: false, default: false })
+  hideUsername: boolean;
+
   @Column("boolean", { nullable: false })
   isAdmin: boolean;
 
