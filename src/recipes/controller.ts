@@ -21,6 +21,8 @@ import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
 import User from "../users/entity";
+import Label from "../labels/entity";
+import RecipeLabel from "../recipe-labels/entity";
 
 interface RecipeIngredientWithDetails {
   ingredientId: number;
@@ -174,8 +176,17 @@ export default class RecipeController {
   @Authorized()
   @HttpCode(201)
   async createRecipe(@Body() recipe: Recipe, @CurrentUser() user: User) {
-    const newRecipe = Recipe.create({ ...recipe, userId: user.id });
-    return newRecipe.save();
+    const newRecipe = await Recipe.create({ ...recipe, userId: user.id }).save();
+
+
+    //Add labels
+    recipe.recipeLabels.map(async recipeLabel => {
+      const label = await Label.findOne(recipeLabel.labelId)
+      const recipe = await Recipe.findOne(newRecipe.id)
+      return RecipeLabel.create({recipe, label}).save()     
+    })
+
+    return {...newRecipe, recipeLabels: [...recipe.recipeLabels]}
   }
 
   @Put("/recipes/:id")
@@ -307,6 +318,60 @@ export default class RecipeController {
         }
       });
     }
+
+
+        //Labels
+        if (update.recipeLabels) {
+          update.recipeLabels.map(label => {
+            label.recipeId = id;
+          });
+    
+          //Remove deleted recipe-labels
+          const oldLabels = await RecipeLabel.find({
+            where: { recipeId: id }
+          });
+          oldLabels.map(async oldLabel => {
+            if (
+              update.recipeLabels &&
+              !update.recipeLabels.find(
+                newLabel =>
+                  oldLabel.labelId === newLabel.labelId
+              )
+            )
+              try {
+                await RecipeLabel.delete(oldLabel);
+              } catch (error) {
+                console.log(error);
+              }
+          });
+
+          // Add new recipe-labels 
+          update.recipeLabels.map(async recipeLabel => {
+            if (
+              !oldLabels.find(
+                oldLabel =>
+                  oldLabel.labelId === recipeLabel.labelId
+              )
+            ) {
+              try {
+    
+                const label = await Label.findOne(
+                  recipeLabel.labelId
+                );
+    
+                await RecipeLabel.create({
+                  recipe,
+                  label
+                }).save();
+              } catch (error) {
+                console.log(error);
+              }
+            } 
+
+          });
+        }
+
+
 
     const recipeMerge: Partial<Recipe> = {
       title: update.title,
