@@ -21,11 +21,18 @@ import RecipeIngredient from "../recipe-ingredients/entity";
 import Step from "../recipe-steps/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
 import User from "../users/entity";
+import Label from "../labels/entity";
+import RecipeLabel from "../recipe-labels/entity";
 
 interface RecipeIngredientWithDetails {
   ingredientId: number;
   name: string;
   amount: string;
+}
+
+interface RecipeLabelWithDetails {
+  labelId: number;
+  labelName: string;
 }
 
 export interface Pagination {
@@ -60,6 +67,25 @@ const getIngredientDetails = (completeRecipe: Recipe) => {
   return Promise.all(ingredientsWithDetails);
 };
 
+//Function to retrieve the label details from the label table. An outer join is not possible in TypeORM.
+const getLabelDetails = (completeRecipe: Recipe) => {
+  const labelsWithDetails = completeRecipe.recipeLabels.map(async label => {
+    const labelDetails = await getRepository(Label)
+      .createQueryBuilder("label")
+      .where("label.id = :id", { id: label.labelId })
+      .getOne();
+    if (!labelDetails) throw new InternalServerError("Something went wrong.");
+
+    const labelObject: RecipeLabelWithDetails = {
+      labelId: label.labelId,
+      labelName: labelDetails.labelName
+    };
+
+    return labelObject;
+  });
+  return Promise.all(labelsWithDetails);
+};
+
 const getCompleteRecipe = async (recipeId: number) => {
   try {
     // Retrieve the ingredients and steps belonging to this recipe
@@ -68,6 +94,7 @@ const getCompleteRecipe = async (recipeId: number) => {
       .where("recipe.id = :id", { id: recipeId })
       .leftJoinAndSelect("recipe.recipeIngredients", "ingredient")
       .leftJoinAndSelect("recipe.steps", "step")
+      .leftJoinAndSelect("recipe.recipeLabels", "label")
       .getOne();
 
     //Sort the steps by column order
@@ -77,21 +104,21 @@ const getCompleteRecipe = async (recipeId: number) => {
 
     // Retrieve the ingredient details which are stored in the ingredient table and not in the recipeIngredient table
     const ingredients = await getIngredientDetails(completeRecipe);
+    const labels = await getLabelDetails(completeRecipe);
 
     delete completeRecipe.recipeIngredients;
+    delete completeRecipe.recipeLabels;
 
     //Retrieve userdetails
-    const user = await User.findOne(completeRecipe.userId)
-    if (!user) throw new InternalServerError('Empty user reference')    
+    const user = await User.findOne(completeRecipe.userId);
+    if (!user) throw new InternalServerError("Empty user reference");
 
     //If username is to be hidden, do not return it
-    if(user.hideUsername)
-    return { ...completeRecipe, ingredients, username: "" };
+    if (user.hideUsername)
+      return { ...completeRecipe, ingredients, labels, username: "" };
 
     //Else return including username
-    return { ...completeRecipe, ingredients, username: user.username };
-
-
+    return { ...completeRecipe, ingredients, labels, username: user.username };
   } catch (e) {
     console.log(e);
     throw new InternalServerError("Something went wrong");
@@ -174,8 +201,19 @@ export default class RecipeController {
   @Authorized()
   @HttpCode(201)
   async createRecipe(@Body() recipe: Recipe, @CurrentUser() user: User) {
-    const newRecipe = Recipe.create({ ...recipe, userId: user.id });
-    return newRecipe.save();
+    const newRecipe = await Recipe.create({
+      ...recipe,
+      userId: user.id
+    }).save();
+
+    //Add labels
+    recipe.recipeLabels.map(async recipeLabel => {
+      const label = await Label.findOne(recipeLabel.labelId);
+      const recipe = await Recipe.findOne(newRecipe.id);
+      return RecipeLabel.create({ recipe, label }).save();
+    });
+
+    return { ...newRecipe, recipeLabels: [...recipe.recipeLabels] };
   }
 
   @Put("/recipes/:id")
@@ -301,6 +339,49 @@ export default class RecipeController {
                 isRatingResetRequired = true;
               RecipeIngredient.merge(oldIngredient, recipeIngredient).save();
             }
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      });
+    }
+
+    //Labels
+    if (update.recipeLabels) {
+      update.recipeLabels.map(label => {
+        label.recipeId = id;
+      });
+
+      //Remove deleted recipe-labels
+      const oldLabels = await RecipeLabel.find({
+        where: { recipeId: id }
+      });
+      oldLabels.map(async oldLabel => {
+        if (
+          update.recipeLabels &&
+          !update.recipeLabels.find(
+            newLabel => oldLabel.labelId === newLabel.labelId
+          )
+        )
+          try {
+            await RecipeLabel.delete(oldLabel);
+          } catch (error) {
+            console.log(error);
+          }
+      });
+
+      // Add new recipe-labels
+      update.recipeLabels.map(async recipeLabel => {
+        if (
+          !oldLabels.find(oldLabel => oldLabel.labelId === recipeLabel.labelId)
+        ) {
+          try {
+            const label = await Label.findOne(recipeLabel.labelId);
+
+            await RecipeLabel.create({
+              recipe,
+              label
+            }).save();
           } catch (error) {
             console.log(error);
           }

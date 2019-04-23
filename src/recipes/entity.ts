@@ -11,6 +11,7 @@ import { BaseEntity } from "typeorm/repository/BaseEntity";
 import Step from "../recipe-steps/entity";
 import RecipeImage from "../recipe-images/entity";
 import RecipeIngredient from "../recipe-ingredients/entity";
+import RecipeLabel from "../recipe-labels/entity";
 import SelectedRecipe from "../selected-recipes/entity";
 import User from "../users/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
@@ -69,6 +70,9 @@ export default class Recipe extends BaseEntity {
 
   @OneToMany(_ => RecipeIngredient, recipeIngredient => recipeIngredient.recipe)
   recipeIngredients: RecipeIngredient[];
+
+  @OneToMany(_ => RecipeLabel, recipeLabel => recipeLabel.recipe)
+  recipeLabels: RecipeLabel[];
 
   @ManyToOne(_ => User, user => user.recipes)
   @JoinColumn({ name: "user_id" })

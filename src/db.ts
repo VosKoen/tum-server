@@ -13,6 +13,8 @@ import SelectedRecipe from "./selected-recipes/entity";
 import RecipeUserRating from "./recipe-user-rating/entity";
 import RequestedIngredient from "./requested-ingredients/entity";
 import RecipeUserImage from "./recipe-user-image/entity";
+import Label from "./labels/entity";
+import RecipeLabel from "./recipe-labels/entity";
 
 class CustomNamingStrategy extends DefaultNamingStrategy
   implements NamingStrategyInterface {
@@ -56,7 +58,9 @@ export default () =>
       SelectedRecipe,
       RecipeUserRating,
       RequestedIngredient,
-      RecipeUserImage
+      RecipeUserImage,
+      Label,
+      RecipeLabel
     ],
     synchronize: true,
     logging: true,

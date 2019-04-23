@@ -17,6 +17,7 @@ import IngredientController from "./ingredients/controller";
 import RequestedIngredientController from "./requested-ingredients/controller";
 import RecipeUserImageController from "./recipe-user-image/controller";
 import ReportsController from "./reports/controller";
+import LabelController from "./labels/controller";
 
 const port = process.env.PORT || 4000;
 
@@ -34,7 +35,8 @@ export const app = createKoaServer({
     IngredientController,
     RequestedIngredientController,
     RecipeUserImageController,
-    ReportsController
+    ReportsController,
+    LabelController
   ],
   authorizationChecker: (action: Action) => {
     const header: string = action.request.headers.authorization;
