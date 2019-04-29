@@ -42,6 +42,7 @@ export interface Pagination {
 
 export interface Filters {
   preparationTime?: string;
+  vegetarian?: string;
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
@@ -139,6 +140,10 @@ export default class RecipeController {
         query.andWhere("recipe.timeNeeded <= :preparationTime", {
           preparationTime: queryInput.preparationTime
         });
+
+      if(queryInput.vegetarian)
+      query.innerJoin("recipe.recipeLabels","label").
+      andWhere("label.labelId = :id", {id: 1});
 
       // Get a random recipe from the database
       const recipe: any = await query
