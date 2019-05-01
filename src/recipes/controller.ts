@@ -147,7 +147,8 @@ export default class RecipeController {
           .innerJoin("recipe.recipeLabels", "label")
           .andWhere("label.labelId = :id", { id: 1 });
 
-      if (queryLabels) {
+      if (Object.keys(queryLabels).length > 0) {
+        console.log(queryLabels)
         const allLabels = await Label.find();
         if (!allLabels) throw new InternalServerError("Something went wrong");
 
@@ -168,6 +169,8 @@ export default class RecipeController {
         query
         .innerJoin("recipe.recipeLabels", "label")
         .andWhere(queryString);
+
+
       }
 
       // Get a random recipe from the database
