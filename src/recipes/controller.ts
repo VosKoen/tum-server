@@ -135,15 +135,39 @@ export default class RecipeController {
     try {
       const query = getRepository(Recipe).createQueryBuilder("recipe");
 
+      const { preparationTime, vegetarian, ...queryLabels } = queryInput;
       //Filter on preparation time
-      if (queryInput.preparationTime)
+      if (preparationTime)
         query.andWhere("recipe.timeNeeded <= :preparationTime", {
-          preparationTime: queryInput.preparationTime
+          preparationTime: preparationTime
         });
 
-      if(queryInput.vegetarian)
-      query.innerJoin("recipe.recipeLabels","label").
-      andWhere("label.labelId = :id", {id: 1});
+      if (vegetarian)
+        query
+          .innerJoin("recipe.recipeLabels", "label")
+          .andWhere("label.labelId = :id", { id: 1 });
+
+      if (queryLabels) {
+        const allLabels = await Label.find();
+        if (!allLabels) throw new InternalServerError("Something went wrong");
+
+        const labelIds = Object.keys(queryLabels).map(queriedLabel => {
+          const labelObject = allLabels.find(
+            label => queriedLabel === label.labelName
+          );
+          if (!labelObject)
+            throw new InternalServerError("Something went wrong");
+          return labelObject.id;
+        });
+
+        console.log(labelIds);
+        labelIds.map(id => {
+          console.log(typeof id, id);
+          return query
+            .innerJoin("recipe.recipeLabels", "label")
+            .andWhere("label.labelId = :id", { id: id });
+        });
+      }
 
       // Get a random recipe from the database
       const recipe: any = await query
@@ -160,7 +184,7 @@ export default class RecipeController {
       return completeRecipe;
     } catch (error) {
       console.log(`An error occured: ${error}`);
-      throw new InternalServerError("Something went wrong");
+      // throw new InternalServerError("Something went wrong");
     }
   }
 
