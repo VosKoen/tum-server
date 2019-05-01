@@ -160,13 +160,14 @@ export default class RecipeController {
           return labelObject.id;
         });
 
-        console.log(labelIds);
-        labelIds.map(id => {
-          console.log(typeof id, id);
-          return query
-            .innerJoin("recipe.recipeLabels", "label")
-            .andWhere("label.labelId = :id", { id: id });
-        });
+        const queryStringParts = labelIds.map(id => `label.labelId = ${id}`
+        );
+
+        const queryString = `(${queryStringParts.join(" OR ")})`;
+
+        query
+        .innerJoin("recipe.recipeLabels", "label")
+        .andWhere(queryString);
       }
 
       // Get a random recipe from the database
