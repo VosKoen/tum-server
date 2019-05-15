@@ -142,35 +142,56 @@ export default class RecipeController {
           preparationTime: preparationTime
         });
 
-      if (vegetarian)
-        query
-          .innerJoin("recipe.recipeLabels", "label")
-          .andWhere("label.labelId = :id", { id: 1 });
+      // if (vegetarian)
+      //   query
+      //     .innerJoin("recipe.recipeLabels", "label")
+      //     .andWhere("label.labelId = :id", { id: 1 });
 
       if (Object.keys(queryLabels).length > 0) {
-        console.log(queryLabels)
         const allLabels = await Label.find();
         if (!allLabels) throw new InternalServerError("Something went wrong");
+        query.innerJoin("recipe.recipeLabels", "label");
 
-        const labelIds = Object.keys(queryLabels).map(queriedLabel => {
-          const labelObject = allLabels.find(
-            label => queriedLabel === label.labelName
+        //OR query
+        const labelIdsOrQuery = Object.keys(queryLabels)
+          .map(queriedLabel => {
+            const labelObject = allLabels.find(
+              label => queriedLabel === label.labelName
+            );
+            if (!labelObject) return undefined;
+            return labelObject.id;
+          })
+          .filter(resultingId => resultingId);
+
+        if (labelIdsOrQuery.length > 0) {
+          const queryStringParts = labelIdsOrQuery.map(
+            id => `label.labelId = ${id}`
           );
-          if (!labelObject)
-            throw new InternalServerError("Something went wrong");
-          return labelObject.id;
-        });
+          const queryStringOr = `(${queryStringParts.join(" OR ")})`;
+          query.andWhere(queryStringOr);
+        }
 
-        const queryStringParts = labelIds.map(id => `label.labelId = ${id}`
-        );
+        //AND query
+        const labelIdsAndQuery = Object.keys(queryLabels)
+          .map(queriedLabel => {
+            const labelObject = allLabels.find(
+              label => queriedLabel === `${label.labelName}AndCondition`
+            );
+            if (!labelObject) return undefined;
+            return labelObject.id;
+          })
+          .filter(resultingId => resultingId);
 
-        const queryString = `(${queryStringParts.join(" OR ")})`;
-
-        query
-        .innerJoin("recipe.recipeLabels", "label")
-        .andWhere(queryString);
-
-
+        if (labelIdsAndQuery.length > 0) {
+          labelIdsAndQuery.map(id =>
+            query.innerJoin(
+              "recipe.recipeLabels",
+              "label",
+              "label.labelId = :labelId",
+              { labelId: id }
+            )
+          );
+        }
       }
 
       // Get a random recipe from the database
