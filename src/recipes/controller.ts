@@ -142,11 +142,6 @@ export default class RecipeController {
           preparationTime: preparationTime
         });
 
-      // if (vegetarian)
-      //   query
-      //     .innerJoin("recipe.recipeLabels", "label")
-      //     .andWhere("label.labelId = :id", { id: 1 });
-
       if (Object.keys(queryLabels).length > 0) {
         const allLabels = await Label.find();
         if (!allLabels) throw new InternalServerError("Something went wrong");
