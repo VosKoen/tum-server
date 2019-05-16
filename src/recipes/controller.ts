@@ -150,7 +150,6 @@ export default class RecipeController {
       if (Object.keys(queryLabels).length > 0) {
         const allLabels = await Label.find();
         if (!allLabels) throw new InternalServerError("Something went wrong");
-        query.innerJoin("recipe.recipeLabels", "label");
 
         //OR query
         const labelIdsOrQuery = Object.keys(queryLabels)
@@ -164,11 +163,14 @@ export default class RecipeController {
           .filter(resultingId => resultingId);
 
         if (labelIdsOrQuery.length > 0) {
+          console.log(labelIdsOrQuery);
           const queryStringParts = labelIdsOrQuery.map(
-            id => `label.labelId = ${id}`
+            id => `recipeLabel.labelId = ${id}`
           );
           const queryStringOr = `(${queryStringParts.join(" OR ")})`;
-          query.andWhere(queryStringOr);
+          query
+            .innerJoin("recipe.recipeLabels", "recipeLabel")
+            .andWhere(queryStringOr);
         }
 
         //AND query
@@ -186,9 +188,8 @@ export default class RecipeController {
           labelIdsAndQuery.map(id =>
             query.innerJoin(
               "recipe.recipeLabels",
-              "label",
-              "label.labelId = :labelId",
-              { labelId: id }
+              `recipeLabel${id}`,
+              `recipeLabel${id}.labelId = ${id}`
             )
           );
         }
