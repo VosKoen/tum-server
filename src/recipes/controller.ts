@@ -42,6 +42,7 @@ export interface Pagination {
 
 export interface Filters {
   preparationTime?: string;
+  vegetarian?: string;
 }
 
 //Function to retrieve the ingredient details from the ingredient table. An outer join is not possible in TypeORM.
@@ -134,11 +135,60 @@ export default class RecipeController {
     try {
       const query = getRepository(Recipe).createQueryBuilder("recipe");
 
+      const { preparationTime, vegetarian, ...queryLabels } = queryInput;
       //Filter on preparation time
-      if (queryInput.preparationTime)
+      if (preparationTime)
         query.andWhere("recipe.timeNeeded <= :preparationTime", {
-          preparationTime: queryInput.preparationTime
+          preparationTime: preparationTime
         });
+
+      if (Object.keys(queryLabels).length > 0) {
+        const allLabels = await Label.find();
+        if (!allLabels) throw new InternalServerError("Something went wrong");
+
+        //OR query
+        const labelIdsOrQuery = Object.keys(queryLabels)
+          .map(queriedLabel => {
+            const labelObject = allLabels.find(
+              label => queriedLabel === label.labelName
+            );
+            if (!labelObject) return undefined;
+            return labelObject.id;
+          })
+          .filter(resultingId => resultingId);
+
+        if (labelIdsOrQuery.length > 0) {
+          console.log(labelIdsOrQuery);
+          const queryStringParts = labelIdsOrQuery.map(
+            id => `recipeLabel.labelId = ${id}`
+          );
+          const queryStringOr = `(${queryStringParts.join(" OR ")})`;
+          query
+            .innerJoin("recipe.recipeLabels", "recipeLabel")
+            .andWhere(queryStringOr);
+        }
+
+        //AND query
+        const labelIdsAndQuery = Object.keys(queryLabels)
+          .map(queriedLabel => {
+            const labelObject = allLabels.find(
+              label => queriedLabel === `${label.labelName}AndCondition`
+            );
+            if (!labelObject) return undefined;
+            return labelObject.id;
+          })
+          .filter(resultingId => resultingId);
+
+        if (labelIdsAndQuery.length > 0) {
+          labelIdsAndQuery.map(id =>
+            query.innerJoin(
+              "recipe.recipeLabels",
+              `recipeLabel${id}`,
+              `recipeLabel${id}.labelId = ${id}`
+            )
+          );
+        }
+      }
 
       // Get a random recipe from the database
       const recipe: any = await query
@@ -155,7 +205,7 @@ export default class RecipeController {
       return completeRecipe;
     } catch (error) {
       console.log(`An error occured: ${error}`);
-      throw new InternalServerError("Something went wrong");
+      // throw new InternalServerError("Something went wrong");
     }
   }
 
