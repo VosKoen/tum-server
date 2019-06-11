@@ -15,6 +15,7 @@ import RequestedIngredient from "./requested-ingredients/entity";
 import RecipeUserImage from "./recipe-user-image/entity";
 import Label from "./labels/entity";
 import RecipeLabel from "./recipe-labels/entity";
+import UserFollow from "./user-follows/entity";
 
 class CustomNamingStrategy extends DefaultNamingStrategy
   implements NamingStrategyInterface {
@@ -60,7 +61,8 @@ export default () =>
       RequestedIngredient,
       RecipeUserImage,
       Label,
-      RecipeLabel
+      RecipeLabel,
+      UserFollow
     ],
     synchronize: true,
     logging: true,

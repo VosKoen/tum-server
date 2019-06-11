@@ -13,6 +13,7 @@ import SelectedRecipe from "../selected-recipes/entity";
 import RecipeUserRating from "../recipe-user-rating/entity";
 import RequestedIngredient from "../requested-ingredients/entity";
 import RecipeImage from "../recipe-images/entity";
+import UserFollow from "../user-follows/entity";
 
 @Entity()
 export default class User extends BaseEntity {
@@ -64,4 +65,10 @@ export default class User extends BaseEntity {
     requestedIngredient => requestedIngredient.user
   )
   requestedIngredients: RequestedIngredient[];
+
+  @OneToMany(_ => UserFollow, userFollow => userFollow.sousChef)
+  chefsFollowed: UserFollow[];
+
+  @OneToMany(_ => UserFollow, userFollow => userFollow.headChef)
+  followers: UserFollow[];
 }
