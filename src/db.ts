@@ -64,5 +64,8 @@ export default () =>
     ],
     synchronize: true,
     logging: true,
-    namingStrategy: new CustomNamingStrategy()
+    namingStrategy: new CustomNamingStrategy(),
+    extra: {
+      ssl: true
+    }
   }).then(_ => console.log("Connected to Postgres with TypeORM"));
